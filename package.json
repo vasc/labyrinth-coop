@@ -1,0 +1,19 @@
+{
+  "name": "labyrinth-coop",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "sim": "bun run src/cli/sweep.ts",
+    "report": "bun run src/cli/report.ts",
+    "site": "bun run site/build.ts",
+    "site:serve": "bun run site/serve.ts"
+  },
+  "devDependencies": {
+    "@happy-dom/global-registrator": "21.0.4",
+    "@types/bun": "1.4.4",
+    "lucide": "1.65.0",
+    "typescript": "7.0.2"
+  }
+}
