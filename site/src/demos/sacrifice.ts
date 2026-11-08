@@ -2,7 +2,7 @@ import { legalShiftOptions } from "../../../src/board";
 import { type GameState, newGame, playTurn, visibleTargets } from "../../../src/game";
 import { type Candidate, PERFECT_PLANNER, evaluate, isSacrifice } from "../../../src/policy";
 import { mulberry32 } from "../../../src/rng";
-import { treasure } from "../icons";
+import type { Text } from "../i18n/types";
 import { MazeView } from "../maze-view";
 import type { Motion } from "../motion";
 
@@ -14,7 +14,7 @@ export type SacrificeDeps = {
   svg: SVGSVGElement;
   motion: Motion;
   waitVisible: () => Promise<void>;
-  say: (step: SacrificeStep, text: string) => void;
+  say: (step: SacrificeStep, text: Text) => void;
 };
 
 const PLANNERS = [PERFECT_PLANNER, PERFECT_PLANNER];
@@ -51,23 +51,23 @@ export const playSacrifice = async (deps: SacrificeDeps, sacrifice: Sacrifice): 
   let state = sacrificeGame(sacrifice.seed);
   const view = new MazeView(deps.svg, state.board, state.pawns, motion);
   const hunted = visibleTargets(state, 0);
-  const name = treasure(hunted[0] ?? 0).name;
+  const target = hunted[0] ?? 0;
   view.setTargets(hunted);
-  say(1, `● needs the ${name}, but none of their pushes opens a path to it.`);
+  say(1, (m) => m.sacrifice.needs(target));
   await deps.waitVisible();
   await motion.sleep(2800);
-  say(2, `So ● pushes for ■ instead, bringing the ${name} within one push of ■.`);
+  say(2, (m) => m.sacrifice.pushesFor(target));
   await view.push(sacrifice.setup.option);
   await view.walk(0, sacrifice.setup.dest);
   state = playTurn(state, 0, sacrifice.setup.option, sacrifice.setup.dest).state;
   await motion.sleep(1800);
   await deps.waitVisible();
-  say(3, "■'s turn. One push opens the path.");
+  say(3, (m) => m.sacrifice.opens);
   await view.push(sacrifice.finish.option);
   await motion.sleep(500);
   await view.walk(1, sacrifice.finish.dest);
   const result = playTurn(state, 1, sacrifice.finish.option, sacrifice.finish.dest);
   if (result.collected !== null) await view.markFound(result.collected);
-  say(4, `■ collects the ${name}. One treasure for the team.`);
+  say(4, (m) => m.sacrifice.collects(target));
   await motion.sleep(3400);
 };

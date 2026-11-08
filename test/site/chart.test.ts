@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { CHART_ROWS, renderChart } from "../../site/src/chart";
+import { en } from "../../site/src/i18n/en";
+import { pt } from "../../site/src/i18n/pt";
 
 describe("renderChart", () => {
   const root = document.createElement("div");
-  renderChart(root, CHART_ROWS, { max: 60, collapseAt: 26 });
+  renderChart(root, CHART_ROWS, { max: 60, collapseAt: 26 }, en);
   const rows = [...root.querySelectorAll(".bar-row")];
 
   test("draws one row per rule variant, ours highlighted", () => {
@@ -25,6 +27,18 @@ describe("renderChart", () => {
     if (!(line instanceof HTMLElement)) throw new Error("collapse line missing");
     expect(line.style.left).toBe(`${(26 / 60) * 100}%`);
     expect(line.textContent).toContain("26");
+  });
+
+  test("labels each row and the axis in the chosen language", () => {
+    const ptRoot = document.createElement("div");
+    renderChart(ptRoot, CHART_ROWS, { max: 60, collapseAt: 26 }, pt);
+    const first = ptRoot.querySelector(".bar-label");
+    expect(first?.textContent).toContain(pt.chart.rows.shared);
+    expect(first?.textContent).toContain(pt.chart.ours);
+    expect(first?.textContent).toContain(pt.chart.figures(24, 30, 3.1));
+    expect(ptRoot.querySelector(".collapse-line")?.textContent).toBe(pt.chart.collapseAt(26));
+    expect(ptRoot.textContent).toContain(pt.chart.unit);
+    expect(root.querySelector(".bar-label")?.textContent).toContain(en.chart.rows.shared);
   });
 
   test("labels the axis every 10 turns", () => {

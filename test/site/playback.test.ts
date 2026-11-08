@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { createI18n } from "../../site/src/i18n/i18n";
 import { bindPlayToggle, createGate } from "../../site/src/playback";
 
 const settled = async (promise: Promise<void>): Promise<boolean> => {
@@ -43,7 +44,7 @@ describe("play toggle", () => {
   test("pauses and resumes its figure, saying what a press will do", () => {
     const gate = createGate();
     const button = document.createElement("button");
-    bindPlayToggle(button, gate);
+    bindPlayToggle(button, gate, createI18n("en"));
     expect(button.textContent).toBe("Pause");
     expect(button.dataset.paused).toBe("false");
     button.click();
@@ -52,5 +53,17 @@ describe("play toggle", () => {
     expect(button.dataset.paused).toBe("true");
     button.click();
     expect(gate.playing).toBe(true);
+  });
+
+  test("relabels itself when the language changes", () => {
+    const gate = createGate();
+    const i18n = createI18n("en");
+    const button = document.createElement("button");
+    bindPlayToggle(button, gate, i18n);
+    button.click();
+    i18n.set("pt");
+    expect(button.textContent).toBe("Continuar");
+    button.click();
+    expect(button.textContent).toBe("Pausar");
   });
 });

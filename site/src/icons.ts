@@ -28,38 +28,42 @@ import { SVG_NS, svgEl } from "./svg";
 
 type IconNode = typeof Crown;
 
-export type Treasure = { name: string; icon: IconNode };
+export type { IconNode };
 
-/** One Lucide icon per treasure id (0-23), the same ids the simulator uses. */
-export const TREASURES: readonly Treasure[] = [
-  { name: "Crown", icon: Crown },
-  { name: "Gem", icon: Gem },
-  { name: "Key", icon: Key },
-  { name: "Sword", icon: Sword },
-  { name: "Shield", icon: Shield },
-  { name: "Skull", icon: Skull },
-  { name: "Ghost", icon: Ghost },
-  { name: "Beetle", icon: Bug },
-  { name: "Bird", icon: Bird },
-  { name: "Rat", icon: Rat },
-  { name: "Turtle", icon: Turtle },
-  { name: "Snail", icon: Snail },
-  { name: "Book", icon: BookOpen },
-  { name: "Map", icon: MapIcon },
-  { name: "Scroll", icon: Scroll },
-  { name: "Hourglass", icon: Hourglass },
-  { name: "Bell", icon: Bell },
-  { name: "Trophy", icon: Trophy },
-  { name: "Feather", icon: Feather },
-  { name: "Shell", icon: Shell },
-  { name: "Compass", icon: Compass },
-  { name: "Coins", icon: Coins },
-  { name: "Wand", icon: WandSparkles },
-  { name: "Telescope", icon: Telescope },
+/**
+ * One Lucide icon per treasure id (0-23), the same ids the simulator uses. The names live in the dictionaries
+ * (site/src/i18n), in the same order: Crown, Gem, Key, Sword, Shield, Skull, Ghost, Beetle, Bird, Rat, Turtle, Snail,
+ * Book, Map, Scroll, Hourglass, Bell, Trophy, Feather, Shell, Compass, Coins, Wand, Telescope.
+ */
+export const TREASURE_ICONS: readonly IconNode[] = [
+  Crown,
+  Gem,
+  Key,
+  Sword,
+  Shield,
+  Skull,
+  Ghost,
+  Bug,
+  Bird,
+  Rat,
+  Turtle,
+  Snail,
+  BookOpen,
+  MapIcon,
+  Scroll,
+  Hourglass,
+  Bell,
+  Trophy,
+  Feather,
+  Shell,
+  Compass,
+  Coins,
+  WandSparkles,
+  Telescope,
 ];
 
-export const treasure = (id: number): Treasure => {
-  const found = TREASURES[id];
+export const treasureIcon = (id: number): IconNode => {
+  const found = TREASURE_ICONS[id];
   if (found === undefined) throw new Error(`no treasure ${id}`);
   return found;
 };

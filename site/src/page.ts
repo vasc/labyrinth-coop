@@ -9,6 +9,8 @@ export type Page = {
   /** The rules list items Fig. 2 lights up, in order. */
   steps: Element[];
   toggles: HTMLButtonElement[];
+  /** The EN / PT switcher, in that order. */
+  langButtons: HTMLButtonElement[];
 };
 
 export const readPage = (doc: Document): Page => {
@@ -44,5 +46,10 @@ export const readPage = (doc: Document): Page => {
   const sacrifice = { svg: svg("sac-board"), toggle: button("sac-toggle"), step: html("sac-step"), caption: html("sac-caption") };
   const steps = [...doc.querySelectorAll("#turn-steps > li")];
   if (steps.length !== 4) throw new Error(`expected 4 turn steps, found ${steps.length}`);
-  return { chart: html("chart"), hero, turn, sacrifice, steps, toggles: [hero.toggle, turn.toggle, sacrifice.toggle] };
+  const langButtons = [...doc.querySelectorAll("[data-lang]")].map((node) => {
+    if (!(node instanceof HTMLButtonElement)) throw new Error("a [data-lang] element is not a <button>");
+    return node;
+  });
+  if (langButtons.length !== 2) throw new Error(`expected 2 language buttons, found ${langButtons.length}`);
+  return { chart: html("chart"), hero, turn, sacrifice, steps, toggles: [hero.toggle, turn.toggle, sacrifice.toggle], langButtons };
 };

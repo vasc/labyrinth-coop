@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { Hud } from "../../site/src/hud";
-import { TREASURES } from "../../site/src/icons";
+import { en } from "../../site/src/i18n/en";
+import { createI18n } from "../../site/src/i18n/i18n";
+import { pt } from "../../site/src/i18n/pt";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -14,7 +16,8 @@ const setup = () => {
     track: document.createElement("div"),
     caption: document.createElement("p"),
   };
-  return { els, hud: new Hud(els, { collapseAfter: 26, treasures: 12 }) };
+  const i18n = createI18n("en");
+  return { els, i18n, hud: new Hud(els, { collapseAfter: 26, treasures: 12 }, i18n) };
 };
 
 describe("Hud", () => {
@@ -27,7 +30,7 @@ describe("Hud", () => {
   test("shows the hunted treasure, the count found and the turns left", () => {
     const { els, hud } = setup();
     hud.show({ target: 3, found: 4, turn: 9 });
-    expect(els.name.textContent).toBe(TREASURES[3]?.name ?? "");
+    expect(els.name.textContent).toBe(en.treasure(3));
     expect(els.icon.querySelector(".icon")).not.toBeNull();
     expect(els.found.textContent).toBe("4 / 12");
     expect(els.left.textContent).toBe("17");
@@ -45,14 +48,25 @@ describe("Hud", () => {
   test("shows that everything is found once the pile is empty", () => {
     const { els, hud } = setup();
     hud.show({ target: null, found: 12, turn: 20 });
-    expect(els.name.textContent).toBe("All found");
+    expect(els.name.textContent).toBe(en.hud.allFound);
     expect(els.found.textContent).toBe("12 / 12");
     expect(els.icon.querySelectorAll(".icon").length).toBe(1);
   });
 
   test("narrates into the caption", () => {
     const { els, hud } = setup();
-    hud.say("Found the Crown.");
-    expect(els.caption.textContent).toBe("Found the Crown.");
+    hud.say((m) => m.live.found(0, 1, 12));
+    expect(els.caption.textContent).toBe("Found the Crown. 1 of 12.");
+  });
+
+  test("redraws the card, turn count and caption in the new language when it changes", () => {
+    const { els, hud, i18n } = setup();
+    hud.show({ target: 0, found: 4, turn: 9 });
+    hud.say((m) => m.live.found(0, 4, 12));
+    i18n.set("pt");
+    expect(els.name.textContent).toBe(pt.treasure(0));
+    expect(els.turn.textContent).toBe("Jogada 9 de 26");
+    expect(els.caption.textContent).toBe("Encontraram a Coroa. 4 de 12.");
+    expect(els.found.textContent).toBe("4 / 12");
   });
 });

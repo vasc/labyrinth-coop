@@ -1,13 +1,13 @@
 import { type GameState, isOver, newGame, playTurn, visibleTargets } from "../../../src/game";
 import { type Policy, decide } from "../../../src/policy";
 import { type Rng, mulberry32 } from "../../../src/rng";
-import { treasure } from "../icons";
+import type { Text } from "../i18n/types";
 import { MazeView } from "../maze-view";
 import type { Motion } from "../motion";
 
 /** The rules list steps: push, walk, collect, marker. */
 export type Step = 0 | 1 | 2 | 3;
-export type OneTurnDeps = { view: MazeView; motion: Motion; mark: (step: Step, label: string) => void };
+export type OneTurnDeps = { view: MazeView; motion: Motion; mark: (step: Step, label: Text) => void };
 
 const SOLO: Policy[] = [{ plans: false, vision: 1 }];
 const COLLAPSE_AFTER = 26;
@@ -19,22 +19,24 @@ export const oneTurnGame = (rng: Rng): GameState => newGame({ players: 1, treasu
 export const playOneTurn = async (deps: OneTurnDeps, state: GameState, rng: Rng, turn: number): Promise<GameState> => {
   const { view, motion, mark } = deps;
   const decision = decide(state, 0, SOLO, rng);
-  mark(0, "1 · Push");
+  mark(0, (m) => m.oneTurn.push);
   await view.push(decision.option);
   await motion.sleep(350);
-  mark(1, "2 · Walk");
+  mark(1, (m) => m.oneTurn.walk);
   await view.walk(0, decision.dest);
   await motion.sleep(300);
   const result = playTurn(state, 0, decision.option, decision.dest);
-  if (result.collected !== null) {
-    mark(2, `3 · Collect the ${treasure(result.collected).name}`);
-    await view.markFound(result.collected);
+  const collected = result.collected;
+  if (collected !== null) {
+    mark(2, (m) => m.oneTurn.collect(collected));
+    await view.markFound(collected);
   } else {
-    mark(2, "3 · Nothing to collect this turn");
+    mark(2, (m) => m.oneTurn.nothing);
   }
   view.setTargets(visibleTargets(result.state, 0));
   await motion.sleep(700);
-  mark(3, `4 · Marker moves: ${COLLAPSE_AFTER - turn} left`);
+  const left = COLLAPSE_AFTER - turn;
+  mark(3, (m) => m.oneTurn.marker(left));
   view.shake();
   await motion.sleep(1100);
   return result.state;

@@ -16,7 +16,7 @@ import {
   rowOf,
   shiftLine,
 } from "../../src/board";
-import { drawIcon, treasure } from "./icons";
+import { drawIcon, treasureIcon } from "./icons";
 import { type Motion, lerp } from "./motion";
 import { svgEl } from "./svg";
 
@@ -246,7 +246,7 @@ export class MazeView {
       const tg = svgEl("g", { class: "treasure", "data-treasure": treasureId, transform: `translate(${T / 2},${T / 2})` }, g);
       svgEl("circle", { class: "ring", r: T * 0.36 }, tg);
       svgEl("circle", { class: "disc", r: T * 0.25 }, tg);
-      drawIcon(tg, treasure(treasureId).icon, T * 0.34, 0, 0);
+      drawIcon(tg, treasureIcon(treasureId), T * 0.34, 0, 0);
       this.treasures.set(treasureId, tg);
     }
     const view = { g, turn, x: 0, y: 0, angle: 0 };

@@ -9,6 +9,7 @@ describe("page template", () => {
     const page = readPage(document);
     expect(page.steps.length).toBe(4);
     expect(page.toggles.length).toBe(3);
+    expect(page.langButtons.map((b) => b.dataset.lang)).toEqual(["en", "pt"]);
   });
 
   test("looping captions are not live regions, so screen readers aren't flooded", async () => {

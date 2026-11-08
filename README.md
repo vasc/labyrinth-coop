@@ -202,6 +202,10 @@ committed page is out of date with its source.
   turn step by step, and a sacrifice found by searching opening positions); `site/src/chart.ts` draws the "Why these
   rules" chart from the sweep numbers.
 - Treasures use [Lucide](https://lucide.dev) icons (ISC licence), one per treasure id 0–23.
+- The page is in English and European Portuguese, with an EN / PT switch. All its text lives in
+  `site/src/i18n/en.ts` and `site/src/i18n/pt.ts`; the template's elements carry `data-i18n` keys and keep the English
+  as their text, which a test holds equal to `en.ts`. The language comes from `?lang=en|pt`, then the viewer's last
+  choice, then the browser's preferred languages.
 - Each figure has a Pause / Play button and only loops while it is on screen (`site/src/playback.ts`). With reduced
   motion set, every figure shows its opening position and nothing loops.
 - Tests live in `test/site/` and run under happy-dom (`bunfig.toml` preloads it). The board view tests read the

@@ -3,10 +3,13 @@ import { legalShiftOptions } from "../../src/board";
 import { playTurn } from "../../src/game";
 import { PERFECT_PLANNER, evaluate, isSacrifice } from "../../src/policy";
 import { mulberry32 } from "../../src/rng";
-import { playLiveGame, describeTurn, SEATS } from "../../site/src/demos/live-game";
+import { describeTurn, playLiveGame } from "../../site/src/demos/live-game";
 import { playOneTurn, oneTurnGame } from "../../site/src/demos/one-turn";
 import { findSacrifice, playSacrifice, sacrificeGame } from "../../site/src/demos/sacrifice";
 import { Hud } from "../../site/src/hud";
+import { en } from "../../site/src/i18n/en";
+import { createI18n } from "../../site/src/i18n/i18n";
+import { pt } from "../../site/src/i18n/pt";
 import { MazeView } from "../../site/src/maze-view";
 import { instantMotion } from "../../site/src/motion";
 
@@ -28,7 +31,7 @@ describe("live game", () => {
     const svg = document.createElementNS(SVG_NS, "svg");
     const els = hudElements();
     const setup = { players: 3, treasures: 12, collapseAfter: 26, seed: 21 };
-    const result = await playLiveGame({ svg, hud: new Hud(els, setup), motion: instantMotion, waitVisible: now }, setup);
+    const result = await playLiveGame({ svg, hud: new Hud(els, setup, createI18n("en")), motion: instantMotion, waitVisible: now }, setup);
     expect(result.turns).toBeLessThanOrEqual(26);
     expect(result.won).toBe(result.found === 12);
     expect(els.found.textContent).toBe(`${result.found} / 12`);
@@ -39,17 +42,18 @@ describe("live game", () => {
 
   test("narrates collecting, setting up and searching turns differently", () => {
     const base = { option: { shift: 0, spareOpen: 5 }, dest: 0, setup: 0, distance: 3 };
-    expect(describeTurn({ ...base, collects: true, sacrifice: false }, 0, 1, "Crown", 5)).toBe(`${SEATS[0]} can reach the Crown.`);
-    expect(describeTurn({ ...base, collects: false, sacrifice: true, setup: 1 }, 1, 2, "Crown", 5)).toBe(
-      `${SEATS[1]} can't reach the Crown, so pushes it toward ${SEATS[2]}.`,
+    expect(describeTurn({ ...base, collects: true, sacrifice: false }, 0, 1, 0, 5)(en)).toBe("● The youngest can reach the Crown.");
+    expect(describeTurn({ ...base, collects: false, sacrifice: true, setup: 1 }, 1, 2, 0, 5)(en)).toBe(
+      "■ Player 2 can't reach the Crown, so pushes it toward ▲ Player 3.",
     );
-    expect(describeTurn({ ...base, collects: false, sacrifice: false }, 2, 0, "Crown", 5)).toBe(`${SEATS[2]} can't reach the Crown yet, so moves closer.`);
+    expect(describeTurn({ ...base, collects: false, sacrifice: false }, 2, 0, 0, 5)(en)).toBe("▲ Player 3 can't reach the Crown yet, so moves closer.");
+    expect(describeTurn({ ...base, collects: false, sacrifice: false }, 2, 0, 0, 5)(pt)).toBe("▲ Jogador 3 ainda não chega à Coroa, por isso aproxima-se.");
   });
 
   test("only says a player moves closer when they end up closer", () => {
     const base = { option: { shift: 0, spareOpen: 5 }, dest: 0, setup: 0, collects: false, sacrifice: false };
-    expect(describeTurn({ ...base, distance: 4 }, 0, 1, "Crown", 4)).toBe(`${SEATS[0]} can't reach the Crown this turn.`);
-    expect(describeTurn({ ...base, distance: 4 }, 0, 1, "Crown", null)).toBe(`${SEATS[0]} can't reach the Crown this turn.`);
+    expect(describeTurn({ ...base, distance: 4 }, 0, 1, 0, 4)(en)).toBe("● The youngest can't reach the Crown this turn.");
+    expect(describeTurn({ ...base, distance: 4 }, 0, 1, 0, null)(en)).toBe("● The youngest can't reach the Crown this turn.");
   });
 });
 
@@ -60,8 +64,15 @@ describe("one turn", () => {
     const state = oneTurnGame(rng);
     const view = new MazeView(svg, state.board, state.pawns, instantMotion);
     const steps: number[] = [];
-    const next = await playOneTurn({ view, motion: instantMotion, mark: (step) => steps.push(step) }, state, rng, 1);
+    const labels: string[] = [];
+    const mark = (step: number, label: (m: typeof en) => string) => {
+      steps.push(step);
+      labels.push(label(en));
+    };
+    const next = await playOneTurn({ view, motion: instantMotion, mark }, state, rng, 1);
     expect(steps).toEqual([0, 1, 2, 3]);
+    expect(labels[0]).toBe("1 · Push");
+    expect(labels[3]).toBe("4 · Marker moves: 25 left");
     expect(view.board).toEqual(next.board);
     expect(view.pawns).toEqual(next.pawns);
   });
@@ -91,8 +102,14 @@ describe("sacrifice", () => {
     if (found === null) throw new Error("no sacrifice found");
     const svg = document.createElementNS(SVG_NS, "svg");
     const steps: number[] = [];
-    await playSacrifice({ svg, motion: instantMotion, waitVisible: now, say: (step) => steps.push(step) }, found);
+    const captions: string[] = [];
+    const say = (step: number, text: (m: typeof en) => string) => {
+      steps.push(step);
+      captions.push(text(pt));
+    };
+    await playSacrifice({ svg, motion: instantMotion, waitVisible: now, say }, found);
     expect(steps).toEqual([1, 2, 3, 4]);
+    expect(captions[2]).toBe("Vez do ■. Um empurrão abre o caminho.");
     expect(svg.querySelectorAll(".found").length).toBe(1);
   });
 });
