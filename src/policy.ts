@@ -1,5 +1,5 @@
 import { type Board, type ShiftOption, applyShift, colOf, legalShiftOptions, reachable, rowOf } from "./board";
-import { type GameState, pileIndex, visibleTargets } from "./game";
+import { type GameState, pileIndex, previewCards, visibleTargets } from "./game";
 import { type Rng, shuffle } from "./rng";
 
 /**
@@ -19,7 +19,7 @@ export type Candidate = {
   collects: boolean;
   /** Chance the next player collects next turn because of this shift, as judged by a planner. */
   setup: number;
-  /** Grid distance from where the pawn ends to the nearest treasure it is after. */
+  /** Grid distance from where the pawn ends to the nearest shown treasure: a target, or a look-ahead card. */
   distance: number;
 };
 
@@ -58,16 +58,42 @@ const targetCells = (board: Board, targets: readonly number[]): number[] => {
   return cells;
 };
 
-/** Grid distance to the closest target on the board; 0 with nothing to chase, a penalty if every target is off the board. */
+const gridDistance = (a: number, b: number): number => Math.abs(rowOf(a) - rowOf(b)) + Math.abs(colOf(a) - colOf(b));
+
+/** Grid distance from a cell to one treasure, null while that treasure is on the spare tile. */
+export const distanceToTreasure = (board: Board, cell: number, treasure: number): number | null => {
+  const at = board.treasure.indexOf(treasure);
+  return at < 0 ? null : gridDistance(at, cell);
+};
+
+/**
+ * Grid distance to the closest target on the board, for scoring moves: 0 with nothing to chase (every move is as
+ * good as any other), a penalty if every target is off the board.
+ */
 const nearest = (cell: number, cells: readonly number[], targets: readonly number[]): number => {
   if (targets.length === 0) return 0;
   if (cells.length === 0) return OFF_BOARD_DISTANCE;
-  return cells.reduce((best, c) => Math.min(best, Math.abs(rowOf(c) - rowOf(cell)) + Math.abs(colOf(c) - colOf(cell))), Number.POSITIVE_INFINITY);
+  return cells.reduce((best, c) => Math.min(best, gridDistance(c, cell)), Number.POSITIVE_INFINITY);
 };
 
-/** The treasures anyone at the table can see right now. Cards revealed by this turn are unknown while planning it. */
-const knownCards = (state: GameState): Set<number> =>
-  new Set(state.pawns.flatMap((_, p) => visibleTargets(state, p)));
+/** The treasures a player keeps in view: the ones they can collect, then the look-ahead cards they will be able to. */
+const shownCards = (state: GameState, player: number): number[] => [...visibleTargets(state, player), ...previewCards(state, player)];
+
+/**
+ * Grid distance from the player's pawn to the nearest treasure they keep in view, as the board stands; null when
+ * they have nothing in view (an emptied personal pile).
+ */
+export const distanceToShown = (state: GameState, player: number): number | null => {
+  const shown = shownCards(state, player);
+  if (shown.length === 0) return null;
+  return nearest(state.pawns[player] ?? 0, targetCells(state.board, shown), shown);
+};
+
+/**
+ * The treasures anyone at the table can see right now, look-ahead cards included. Cards first turned over by this
+ * turn are unknown while planning it.
+ */
+const knownCards = (state: GameState): Set<number> => new Set(state.pawns.flatMap((_, p) => shownCards(state, p)));
 
 /**
  * How likely `next` is to collect on their turn from this position, as judged by `planner`: the planner works out
@@ -105,6 +131,7 @@ export const evaluate = (state: GameState, player: number, policies: readonly Po
   const nextPolicy = policies[next] ?? PERFECT_PLANNER;
   const plans = policy.plans && next !== player;
   const targets = visibleTargets(state, player);
+  const chase = shownCards(state, player);
   const known = plans ? knownCards(state) : new Set<number>();
   return options.map((option) => {
     const shifted = applyShift(state.board, state.pawns, option);
@@ -126,9 +153,10 @@ export const evaluate = (state: GameState, player: number, policies: readonly Po
       });
       return scored.reduce((best, c) => (c.setup > best.setup ? c : best));
     }
-    const cells = targetCells(shifted.board, targets);
-    const dest = reach.reduce((best, cell) => (nearest(cell, cells, targets) < nearest(best, cells, targets) ? cell : best));
-    return { option, dest, collects: false, setup: setupFrom(after(dest, state.piles)), distance: nearest(dest, cells, targets) };
+    // Nothing to collect: head for whichever shown treasure is nearer, the target or the look-ahead.
+    const cells = targetCells(shifted.board, chase);
+    const dest = reach.reduce((best, cell) => (nearest(cell, cells, chase) < nearest(best, cells, chase) ? cell : best));
+    return { option, dest, collects: false, setup: setupFrom(after(dest, state.piles)), distance: nearest(dest, cells, chase) };
   });
 };
 
@@ -157,6 +185,17 @@ export const decide = (state: GameState, player: number, policies: readonly Poli
   const top = Math.max(...candidates.map(score));
   const chosen = shuffle(candidates.filter((c) => score(c) >= top - EPSILON), rng)[0] ?? candidates[0] ?? fail();
   return { ...chosen, sacrifice: isSacrifice(chosen, candidates) };
+};
+
+/**
+ * A turn where the player could do nothing useful: it collects nothing, sets nobody up, and ends no closer to any
+ * shown treasure than `before`. Waiting on a treasure (distance 0) is a plan, not idleness. With nothing in view
+ * (`before` null), every turn that sets nobody up is idle.
+ */
+export const isIdle = (decision: Decision, before: number | null): boolean => {
+  if (decision.collects || decision.setup > 0) return false;
+  if (before === null) return true;
+  return decision.distance > 0 && decision.distance >= before;
 };
 
 const fail = (): never => {

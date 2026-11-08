@@ -1,7 +1,7 @@
-import { newGame, visibleTargets } from "../../src/game";
+import { newGame, previewCards, visibleTargets } from "../../src/game";
 import { mulberry32 } from "../../src/rng";
 import { CHART_ROWS, renderChart } from "./chart";
-import { playLiveGame } from "./demos/live-game";
+import { COLLAPSE_AFTER, LIVE_DECK, playLiveGame } from "./demos/live-game";
 import { type Step, oneTurnGame, runOneTurnLoop } from "./demos/one-turn";
 import { type SacrificeStep, findSacrifice, playSacrifice, sacrificeGame } from "./demos/sacrifice";
 import { Hud } from "./hud";
@@ -15,7 +15,7 @@ import { instantMotion, liveMotion, prefersReducedMotion } from "./motion";
 import { readPage } from "./page";
 import { type Gate, bindPlayToggle, createGate, observeVisibility } from "./playback";
 
-const LIVE = { players: 3, treasures: 12, collapseAfter: 26 };
+const LIVE = { players: 3, treasures: 12, collapseAfter: COLLAPSE_AFTER };
 const PAUSE_BETWEEN_GAMES = 4500;
 const SACRIFICE_STEPS = 4;
 
@@ -67,10 +67,12 @@ if (still) for (const toggle of page.toggles) toggle.hidden = true;
 // Fig. 1: the live game.
 const hud = new Hud(page.hero.hud, LIVE, i18n);
 if (still) {
-  const state = newGame({ players: LIVE.players, treasures: LIVE.treasures, deck: { pile: "shared", reveal: 1 } }, mulberry32(11));
+  const state = newGame({ players: LIVE.players, treasures: LIVE.treasures, deck: LIVE_DECK }, mulberry32(11));
   const target = visibleTargets(state, 0)[0] ?? 0;
-  new MazeView(page.hero.svg, state.board, state.pawns, motion).setTargets([target]);
-  hud.show({ target, found: 0, turn: 0 });
+  const view = new MazeView(page.hero.svg, state.board, state.pawns, motion);
+  view.setTargets([target]);
+  view.setLookAhead(previewCards(state, 0));
+  hud.show({ target, ahead: previewCards(state, 0)[0] ?? null, found: 0, turn: 0 });
   hud.say((m) => m.live.intro(LIVE.players, target));
 } else {
   const gate = gateFor(page.hero.svg, page.hero.toggle);

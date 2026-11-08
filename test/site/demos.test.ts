@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { legalShiftOptions } from "../../src/board";
-import { playTurn } from "../../src/game";
+import { newGame, playTurn, previewCards } from "../../src/game";
 import { PERFECT_PLANNER, evaluate, isSacrifice } from "../../src/policy";
 import { mulberry32 } from "../../src/rng";
-import { describeTurn, playLiveGame } from "../../site/src/demos/live-game";
+import { LIVE_DECK, type TurnScene, describeTurn, playLiveGame } from "../../site/src/demos/live-game";
 import { playOneTurn, oneTurnGame } from "../../site/src/demos/one-turn";
 import { findSacrifice, playSacrifice, sacrificeGame } from "../../site/src/demos/sacrifice";
-import { Hud } from "../../site/src/hud";
+import { Hud, type HudState } from "../../site/src/hud";
 import { en } from "../../site/src/i18n/en";
 import { createI18n } from "../../site/src/i18n/i18n";
 import { pt } from "../../site/src/i18n/pt";
@@ -19,6 +19,8 @@ const now = () => Promise.resolve();
 const hudElements = () => ({
   icon: document.createElementNS(SVG_NS, "svg"),
   name: document.createElement("strong"),
+  nextIcon: document.createElementNS(SVG_NS, "svg"),
+  nextName: document.createElement("strong"),
   found: document.createElement("b"),
   left: document.createElement("b"),
   turn: document.createElement("p"),
@@ -40,20 +42,79 @@ describe("live game", () => {
     expect(els.caption.textContent).toContain(result.won ? "Everyone wins" : "collapsed");
   });
 
-  test("narrates collecting, setting up and searching turns differently", () => {
-    const base = { option: { shift: 0, spareOpen: 5 }, dest: 0, setup: 0, distance: 3 };
-    expect(describeTurn({ ...base, collects: true, sacrifice: false }, 0, 1, 0, 5)(en)).toBe("● The youngest can reach the Crown.");
-    expect(describeTurn({ ...base, collects: false, sacrifice: true, setup: 1 }, 1, 2, 0, 5)(en)).toBe(
-      "■ Player 2 can't reach the Crown, so pushes it toward ▲ Player 3.",
-    );
-    expect(describeTurn({ ...base, collects: false, sacrifice: false }, 2, 0, 0, 5)(en)).toBe("▲ Player 3 can't reach the Crown yet, so moves closer.");
-    expect(describeTurn({ ...base, collects: false, sacrifice: false }, 2, 0, 0, 5)(pt)).toBe("▲ Jogador 3 ainda não chega à Coroa, por isso aproxima-se.");
+  test("plays with a look-ahead card: the HUD names it from the start, and it is marked on the board while cards remain", async () => {
+    const svg = document.createElementNS(SVG_NS, "svg");
+    const els = hudElements();
+    const setup = { players: 3, treasures: 12, collapseAfter: 26, seed: 21 };
+    const hud = new Hud(els, setup, createI18n("en"));
+    const shown: HudState[] = [];
+    const show = hud.show.bind(hud);
+    hud.show = (state) => {
+      shown.push(state);
+      show(state);
+    };
+    const result = await playLiveGame({ svg, hud, motion: instantMotion, waitVisible: now }, setup);
+    const opening = newGame({ players: 3, treasures: 12, deck: LIVE_DECK }, mulberry32(21));
+    expect(shown[0]?.ahead).toBe(previewCards(opening, 0)[0] ?? -1);
+    for (const state of shown) expect(state.ahead === null).toBe(state.found >= 11);
+    expect(svg.querySelectorAll(".ahead").length).toBe(result.found >= 11 ? 0 : 1);
   });
 
-  test("only says a player moves closer when they end up closer", () => {
-    const base = { option: { shift: 0, spareOpen: 5 }, dest: 0, setup: 0, collects: false, sacrifice: false };
-    expect(describeTurn({ ...base, distance: 4 }, 0, 1, 0, 4)(en)).toBe("● The youngest can't reach the Crown this turn.");
-    expect(describeTurn({ ...base, distance: 4 }, 0, 1, 0, null)(en)).toBe("● The youngest can't reach the Crown this turn.");
+  const scene = (over: Partial<TurnScene> = {}): TurnScene => ({
+    player: 0,
+    next: 1,
+    target: 0,
+    ahead: 13,
+    headsFor: "target",
+    before: 5,
+    after: 3,
+    ...over,
+  });
+  const base = { option: { shift: 0, spareOpen: 5 }, dest: 0, setup: 0, distance: 3, collects: false, sacrifice: false };
+
+  test("narrates collecting, setting up and searching turns differently", () => {
+    expect(describeTurn({ ...base, collects: true, distance: 0 }, scene())(en)).toBe("● The youngest can reach the Crown.");
+    expect(describeTurn({ ...base, sacrifice: true, setup: 1 }, scene({ player: 1, next: 2 }))(en)).toBe(
+      "■ Player 2 can't reach the Crown, so pushes it toward ▲ Player 3.",
+    );
+    expect(describeTurn(base, scene({ player: 2, next: 0 }))(en)).toBe("▲ Player 3 can't reach the Crown yet, so moves closer.");
+    expect(describeTurn(base, scene({ player: 2, next: 0 }))(pt)).toBe("▲ Jogador 3 ainda não chega à Coroa, por isso aproxima-se.");
+  });
+
+  test("narrates the look-ahead: collecting while setting up the next one, heading for it, and waiting on it", () => {
+    expect(describeTurn({ ...base, collects: true, distance: 0, setup: 0.6 }, scene())(en)).toBe(
+      "● The youngest reaches the Crown and leaves ■ Player 2 a way to the Map.",
+    );
+    expect(describeTurn(base, scene({ headsFor: "ahead" }))(en)).toBe("● The youngest can't reach the Crown, so heads for the Map, which comes next.");
+    expect(describeTurn(base, scene({ headsFor: "ahead", after: 0 }))(en)).toBe(
+      "● The youngest can't reach the Crown, so waits on the Map, which comes next.",
+    );
+    expect(describeTurn(base, scene({ headsFor: "ahead", after: 0 }))(pt)).toBe(
+      "● O mais novo não chega à Coroa, por isso espera em cima do Mapa, que vem a seguir.",
+    );
+    expect(describeTurn({ ...base, collects: true, distance: 0, setup: 0.6 }, scene())(pt)).toBe(
+      "● O mais novo chega à Coroa e deixa ao ■ Jogador 2 um caminho até ao Mapa.",
+    );
+  });
+
+  test("agrees with a plural treasure", () => {
+    const coins = 21;
+    expect(describeTurn(base, scene({ ahead: coins, headsFor: "ahead" }))(en)).toBe(
+      "● The youngest can't reach the Crown, so heads for the Coins, which come next.",
+    );
+    expect(describeTurn(base, scene({ ahead: coins, headsFor: "ahead", after: 0 }))(pt)).toBe(
+      "● O mais novo não chega à Coroa, por isso espera em cima das Moedas, que vêm a seguir.",
+    );
+    expect(describeTurn({ ...base, sacrifice: true, setup: 1 }, scene({ target: coins }))(en)).toBe(
+      "● The youngest can't reach the Coins, so pushes them toward ■ Player 2.",
+    );
+  });
+
+  test("only says a player moves closer when they end up closer to the treasure named", () => {
+    expect(describeTurn(base, scene({ before: 4, after: 4 }))(en)).toBe("● The youngest can't reach the Crown this turn.");
+    expect(describeTurn(base, scene({ before: null, after: 4 }))(en)).toBe("● The youngest can't reach the Crown this turn.");
+    expect(describeTurn(base, scene({ before: 4, after: null }))(en)).toBe("● The youngest can't reach the Crown this turn.");
+    expect(describeTurn(base, scene({ before: 4, after: 4, headsFor: "ahead" }))(en)).toBe("● The youngest can't reach the Crown this turn.");
   });
 });
 
@@ -72,7 +133,7 @@ describe("one turn", () => {
     const next = await playOneTurn({ view, motion: instantMotion, mark }, state, rng, 1);
     expect(steps).toEqual([0, 1, 2, 3]);
     expect(labels[0]).toBe("1 · Push");
-    expect(labels[3]).toBe("4 · Marker moves: 25 left");
+    expect(labels[3]).toBe("4 · Marker moves: 22 left");
     expect(view.board).toEqual(next.board);
     expect(view.pawns).toEqual(next.pawns);
   });

@@ -126,6 +126,11 @@ export class MazeView {
     for (const [id, g] of this.treasures) g.classList.toggle("target", ids.includes(id));
   }
 
+  /** Marks the look-ahead treasures: shown to everyone, next in line, not yet collectable. */
+  setLookAhead(ids: readonly number[]): void {
+    for (const [id, g] of this.treasures) g.classList.toggle("ahead", ids.includes(id));
+  }
+
   /** Puts a pawn on a cell without walking there; for setting up a scene. */
   placePawn(player: number, cell: number): void {
     this.pawns[player] = cell;
@@ -190,7 +195,7 @@ export class MazeView {
     const c = T / 2;
     await this.motion.tween(480, (t) => g.setAttribute("transform", `translate(${c},${c}) scale(${1 + Math.sin(t * Math.PI) * 0.6})`));
     g.setAttribute("transform", `translate(${c},${c})`);
-    g.classList.remove("target");
+    g.classList.remove("target", "ahead");
     g.classList.add("found");
   }
 

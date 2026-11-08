@@ -35,6 +35,8 @@ export const readPage = (doc: Document): Page => {
     hud: {
       icon: svg("hud-icon"),
       name: html("hud-name"),
+      nextIcon: svg("hud-next-icon"),
+      nextName: html("hud-next-name"),
       found: html("hud-found"),
       left: html("hud-left"),
       turn: html("hud-turn"),

@@ -33,12 +33,12 @@ describe("renderChart", () => {
     const ptRoot = document.createElement("div");
     renderChart(ptRoot, CHART_ROWS, { max: 60, collapseAt: 26 }, pt);
     const first = ptRoot.querySelector(".bar-label");
-    expect(first?.textContent).toContain(pt.chart.rows.shared);
+    expect(first?.textContent).toContain(pt.chart.rows.lookAhead);
     expect(first?.textContent).toContain(pt.chart.ours);
-    expect(first?.textContent).toContain(pt.chart.figures(24, 30, 3.1));
+    expect(first?.textContent).toContain(pt.chart.figures(21, 27, 2.1));
     expect(ptRoot.querySelector(".collapse-line")?.textContent).toBe(pt.chart.collapseAt(26));
     expect(ptRoot.textContent).toContain(pt.chart.unit);
-    expect(root.querySelector(".bar-label")?.textContent).toContain(en.chart.rows.shared);
+    expect(root.querySelector(".bar-label")?.textContent).toContain(en.chart.rows.lookAhead);
   });
 
   test("labels the axis every 10 turns", () => {

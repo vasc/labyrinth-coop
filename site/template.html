@@ -108,16 +108,21 @@ a { color: inherit; }
 .fig > figcaption { border-top: 1px solid var(--ink); padding: 12px; display: grid; gap: 12px; }
 
 .hud { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px 16px; align-items: center; }
+.cards { display: flex; gap: 8px; align-items: stretch; }
 .card {
   display: grid; justify-items: center; gap: 4px; min-width: 84px; padding: 8px 6px;
   border: 1px solid var(--ink); background: var(--paper);
 }
 .card svg { width: 40px; height: 40px; }
 .card strong { font: 600 13px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+.card.next { border-style: dotted; border-width: 2px; color: var(--ink-2); }
+.card.next svg { width: 28px; height: 28px; }
+.card.next .icon { stroke: var(--ink-2); }
+.card.next strong { font-size: 11px; }
 .stats { display: grid; gap: 8px; min-width: 0; }
 .stat-row { display: flex; gap: 20px; flex-wrap: wrap; font: 500 13px/1.3 var(--mono); font-variant-numeric: tabular-nums; }
 .stat-row span { color: var(--ink-2); }
-.track { display: grid; grid-template-columns: repeat(26, minmax(0, 1fr)); gap: 2px; }
+.track { display: grid; grid-template-columns: repeat(var(--spaces), minmax(0, 1fr)); gap: 2px; }
 .track i { display: block; height: 14px; border: 1px solid var(--ink); background: var(--paper); }
 .track i.on { background: var(--ink); }
 .track i.edge { border-style: dashed; }
@@ -206,6 +211,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .treasure.target .disc { fill: var(--ink); }
 .treasure.target .icon { stroke: var(--paper); }
 .treasure.target .ring { display: inline; animation: ants 1.2s linear infinite; }
+.treasure.ahead .ring { display: inline; stroke-dasharray: 1 2.5; stroke-linecap: round; stroke-width: 1.4; }
 .treasure.found .icon { opacity: 0.25; }
 @keyframes ants { to { stroke-dashoffset: -12; } }
 .pawn { fill: var(--ink); stroke: var(--paper); stroke-width: 2; }
@@ -227,6 +233,7 @@ tbody tr:last-child td { border-bottom: 0; }
   .lede { font-size: 17px; }
   .hud { grid-template-columns: minmax(0, 1fr); }
   .card { grid-template-columns: auto auto; width: auto; justify-self: start; gap: 10px; align-items: center; }
+  .cards { flex-wrap: wrap; }
   .card .label { grid-column: 1 / -1; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -247,7 +254,7 @@ tbody tr:last-child td { border-bottom: 0; }
   <header class="hero">
     <div class="hero-text">
       <h1><span data-i18n="hero.title1">Before the Maze</span> <span class="outline" data-i18n="hero.title2">Falls</span></h1>
-      <p class="lede" data-i18n="hero.lede">Everyone plays on the same side. Find all 12 treasures before the labyrinth collapses. When you can't reach the treasure yourself, push the maze so the next player can.</p>
+      <p class="lede" data-i18n="hero.lede">Everyone plays on the same side. Find all 12 treasures before the labyrinth collapses. When you can't reach the treasure yourself, push the maze so the next player can, or get ready for the one after it.</p>
       <ul class="facts">
         <li data-i18n="hero.players">2–4 players</li>
         <li data-i18n="hero.age">Age 6 and up</li>
@@ -258,22 +265,30 @@ tbody tr:last-child td { border-bottom: 0; }
         <li data-i18n="hero.kid">● The youngest, playing their own turns</li>
         <li data-i18n="hero.adults">■ ▲ Grown-ups, setting up the next player</li>
         <li data-i18n="hero.target">Black disc, dashed ring: the treasure everyone is hunting</li>
+        <li data-i18n="hero.ahead">Dotted ring: the look-ahead, next in line</li>
         <li data-i18n="hero.faded">Faded: already found</li>
       </ul>
     </div>
 
     <figure class="fig" aria-label="A three-player game playing itself" data-i18n-aria="fig1.aria">
-      <div class="fig-head"><p class="label" data-i18n="fig1.label">Fig. 1 · Live game, 3 players</p><div class="fig-tools"><p class="label" id="hud-turn">Turn 0 of 26</p><button class="play-toggle" id="hero-toggle" type="button">Pause</button></div></div>
+      <div class="fig-head"><p class="label" data-i18n="fig1.label">Fig. 1 · Live game, 3 players</p><div class="fig-tools"><p class="label" id="hud-turn">Turn 0 of 23</p><button class="play-toggle" id="hero-toggle" type="button">Pause</button></div></div>
       <svg class="board" id="hero-board" role="img" aria-label="Seven by seven maze board with three pawns" data-i18n-aria="fig1.board"></svg>
       <figcaption>
         <div class="hud">
-          <div class="card">
-            <p class="label" data-i18n="fig1.hunting">Hunting</p>
-            <svg id="hud-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
-            <strong id="hud-name">Crown</strong>
+          <div class="cards">
+            <div class="card">
+              <p class="label" data-i18n="fig1.hunting">Hunting</p>
+              <svg id="hud-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
+              <strong id="hud-name">Crown</strong>
+            </div>
+            <div class="card next">
+              <p class="label" data-i18n="fig1.next">Next</p>
+              <svg id="hud-next-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
+              <strong id="hud-next-name">Key</strong>
+            </div>
           </div>
           <div class="stats">
-            <div class="stat-row"><div><span data-i18n="fig1.found">Found</span> <b id="hud-found">0 / 12</b></div><div><span data-i18n="fig1.left">Turns left</span> <b id="hud-left">26</b></div></div>
+            <div class="stat-row"><div><span data-i18n="fig1.found">Found</span> <b id="hud-found">0 / 12</b></div><div><span data-i18n="fig1.left">Turns left</span> <b id="hud-left">23</b></div></div>
             <div class="track" id="hud-track" aria-hidden="true"></div>
           </div>
           <p class="caption" id="hud-caption">3 players, one shared target.</p>
@@ -291,9 +306,9 @@ tbody tr:last-child td { border-bottom: 0; }
       <ol class="steps">
         <li><div><h3 data-i18n="setup.s1.title">Build the maze</h3><p data-i18n="setup.s1.body">Shuffle the loose tiles onto the board as usual. One tile is left over: that's the spare.</p></div></li>
         <li><div><h3 data-i18n="setup.s2.title">Make one pile of 12</h3><p data-i18n="setup.s2.body">Shuffle the treasure cards and deal 12 face down into a single pile. The rest go back in the box.</p></div></li>
-        <li><div><h3 data-i18n="setup.s3.title">Turn over the top card</h3><p data-i18n="setup.s3.body">That treasure is what the whole table is hunting. Leave it face up where everyone can see it.</p></div></li>
+        <li><div><h3 data-i18n="setup.s3.title">Turn over two cards</h3><p data-i18n="setup.s3.body">The top card is the target: the treasure the whole table is hunting. Turn the next card face up beside it: that's the look-ahead, the treasure that comes after.</p></div></li>
         <li><div><h3 data-i18n="setup.s4.title">Pawns on the corners</h3><p data-i18n="setup.s4.body">One pawn per player on the start corners. The youngest player goes first.</p></div></li>
-        <li><div><h3 data-i18n="setup.s5.title">Lay out the collapse track</h3><p data-i18n="setup.s5.body">26 spaces for 3 or 4 players, 28 for 2. A row of coins or tally marks on paper works. The marker starts at the beginning.</p></div></li>
+        <li><div><h3 data-i18n="setup.s5.title">Lay out the collapse track</h3><p data-i18n="setup.s5.body">23 spaces for 3 or 4 players, 26 for 2. A row of coins or tally marks on paper works. The marker starts at the beginning.</p></div></li>
       </ol>
       <div class="stack">
         <div class="ends">
@@ -312,9 +327,9 @@ tbody tr:last-child td { border-bottom: 0; }
     </div>
     <div class="two">
       <ol class="steps" id="turn-steps">
-        <li><div><span class="must" data-i18n="turn.s1.must">Must</span><h3 data-i18n="turn.s1.title">Push</h3><p data-i18n="turn.s1.body">Slide the spare tile in at any arrow, turned any way you like. The tile pushed out the far side becomes the new spare. You can't push it straight back where the last player pushed it out.</p></div></li>
+        <li><div><span class="must" data-i18n="turn.s1.must">Must</span><h3 data-i18n="turn.s1.title">Push</h3><p data-i18n="turn.s1.body">Always first, even if your path is already open. Slide the spare tile in at any arrow, turned any way you like. The tile pushed out the far side becomes the new spare. You can't push it straight back where the last player pushed it out.</p></div></li>
         <li><div><span class="must" data-i18n="turn.s2.must">May</span><h3 data-i18n="turn.s2.title">Walk</h3><p data-i18n="turn.s2.body">Move your pawn any distance along open paths, or stay put. Pawns don't block each other.</p></div></li>
-        <li><div><span class="must" data-i18n="turn.s3.must">If you can</span><h3 data-i18n="turn.s3.title">Collect</h3><p data-i18n="turn.s3.body">End your move on the face-up treasure and it's found. Anyone can collect it. Set the card aside and turn over the next one.</p></div></li>
+        <li><div><span class="must" data-i18n="turn.s3.must">If you can</span><h3 data-i18n="turn.s3.title">Collect</h3><p data-i18n="turn.s3.body">End your move on the target and it's found. Anyone can collect it. Set the card aside: the look-ahead becomes the new target, and you turn over a new look-ahead.</p></div></li>
         <li><div><span class="must" data-i18n="turn.s4.must">Always</span><h3 data-i18n="turn.s4.title">The maze shakes</h3><p data-i18n="turn.s4.body">Move the collapse marker one space, whether or not anything was found.</p></div></li>
       </ol>
       <figure class="fig" aria-label="One turn, step by step" data-i18n-aria="fig2.aria">
@@ -342,8 +357,9 @@ tbody tr:last-child td { border-bottom: 0; }
           <li><p data-i18n="sac.tip2">Pushing the treasure to the edge is good too. If it ends up on the spare tile, the next player can push it in right next to themselves.</p></li>
           <li><p data-i18n="sac.tip3">Talk it through out loud. Everyone can see the target, so the whole table can help find the push.</p></li>
           <li><p data-i18n="sac.tip4">Set the youngest player up with easy wins: a treasure already on their path, so they only need to see the board as it is.</p></li>
+          <li><p data-i18n="sac.tip5">Can you reach the target this turn? Look for the push that keeps your own path open and also opens a path to the look-ahead treasure for the next player. That's the best kind of turn.</p></li>
         </ul>
-        <p class="note" data-i18n="sac.note">In the simulations, a good table makes about 3 of these sacrifices per game. They're what makes the collapse beatable.</p>
+        <p class="note" data-i18n="sac.note">In the simulations, a good table makes about 2 of these sacrifices per game, plus about 5 turns where a player collects and sets up the next player with the same push. They're what makes the collapse beatable.</p>
       </div>
     </div>
   </section>
@@ -354,12 +370,14 @@ tbody tr:last-child td { border-bottom: 0; }
       <h2 data-i18n="rules.title">Good to know</h2>
     </div>
     <ul class="rules">
-      <li><p class="label" data-i18n="rules.r1.label">Always push</p><p data-i18n="rules.r1.body">Pushing is not optional, even if it breaks a good path.</p></li>
+      <li><p class="label" data-i18n="rules.r1.label">Always push</p><p data-i18n="rules.r1.body">Pushing is not optional, even if your path is already open and the push might break it.</p></li>
       <li><p class="label" data-i18n="rules.r2.label">No undo</p><p data-i18n="rules.r2.body">You can't push the spare back in where the previous player just pushed it out.</p></li>
       <li><p class="label" data-i18n="rules.r3.label">Off the edge</p><p data-i18n="rules.r3.body">A pawn pushed off the board comes back on the new tile at the other end of that row.</p></li>
       <li><p class="label" data-i18n="rules.r4.label">Treasure on the spare</p><p data-i18n="rules.r4.body">It can't be collected until someone pushes it back into the maze.</p></li>
       <li><p class="label" data-i18n="rules.r5.label">Shared squares</p><p data-i18n="rules.r5.body">Any number of pawns can stand on the same tile.</p></li>
-      <li><p class="label" data-i18n="rules.r6.label">One per turn</p><p data-i18n="rules.r6.body">Only the face-up treasure counts, and only if you end your move on it.</p></li>
+      <li><p class="label" data-i18n="rules.r6.label">One per turn</p><p data-i18n="rules.r6.body">Only the target counts, not the look-ahead, and only if you end your move on it. At most one treasure a turn.</p></li>
+      <li><p class="label" data-i18n="rules.r7.label">Look-ahead</p><p data-i18n="rules.r7.body">You can stand on the look-ahead treasure, but it doesn't count until it becomes the target.</p></li>
+      <li><p class="label" data-i18n="rules.r8.label">Camping</p><p data-i18n="rules.r8.body">If the treasure you're standing on becomes the target, it isn't found straight away. Collect it on your next turn: push first, then end your move on it. Your pawn rides along with its tile, so you only lose the treasure if your push shoves that tile off the board.</p></li>
     </ul>
   </section>
 
@@ -367,7 +385,7 @@ tbody tr:last-child td { border-bottom: 0; }
     <div class="section-head">
       <p class="label" data-i18n="diff.kicker">Tuning the collapse</p>
       <h2 data-i18n="diff.title">How hard should it be?</h2>
-      <p data-i18n="diff.intro">Chance of finding every treasure before the collapse. The youngest plays their own turns; the other players help as described above.</p>
+      <p data-i18n="diff.intro">Chance of finding every treasure before the collapse, playing with the look-ahead card. The youngest plays their own turns; the other players help as described above.</p>
     </div>
     <div class="table-wrap">
       <table>
@@ -375,20 +393,20 @@ tbody tr:last-child td { border-bottom: 0; }
           <tr><th data-i18n="diff.th.game">Game</th><th class="num" data-i18n="diff.th.treasures">Treasures</th><th class="num" data-i18n="diff.th.collapse">Collapse after</th><th class="num" data-i18n="diff.th.p2">2 players</th><th class="num" data-i18n="diff.th.p3">3 players</th><th class="num" data-i18n="diff.th.p4">4 players</th></tr>
         </thead>
         <tbody>
-          <tr><td data-i18n="diff.quick">Quick</td><td class="num">8</td><td class="num" data-turns="20">20 turns</td><td class="num">76%</td><td class="num">85%</td><td class="num">90%</td></tr>
-          <tr class="pick"><td data-i18n="diff.standard">Standard</td><td class="num">12</td><td class="num" data-turns="26">26 turns</td><td class="num">59%</td><td class="num">73%</td><td class="num">79%</td></tr>
-          <tr class="pick"><td data-i18n="diff.standard2">Standard, 2 players</td><td class="num">12</td><td class="num" data-turns="28">28 turns</td><td class="num">71%</td><td class="num">84%</td><td class="num">90%</td></tr>
-          <tr><td data-i18n="diff.harder">Harder</td><td class="num">12</td><td class="num" data-turns="24">24 turns</td><td class="num">47%</td><td class="num">60%</td><td class="num">65%</td></tr>
-          <tr><td data-i18n="diff.gentle">Gentle: plan every turn together</td><td class="num">12</td><td class="num" data-turns="26">26 turns</td><td class="num">95%</td><td class="num">95%</td><td class="num">93%</td></tr>
+          <tr><td data-i18n="diff.quick">Quick</td><td class="num">8</td><td class="num" data-turns="18">18 turns</td><td class="num">72%</td><td class="num">85%</td><td class="num">88%</td></tr>
+          <tr class="pick"><td data-i18n="diff.standard">Standard</td><td class="num">12</td><td class="num" data-turns="23">23 turns</td><td class="num">56%</td><td class="num">72%</td><td class="num">77%</td></tr>
+          <tr class="pick"><td data-i18n="diff.standard2">Standard, 2 players</td><td class="num">12</td><td class="num" data-turns="26">26 turns</td><td class="num">71%</td><td class="num">89%</td><td class="num">92%</td></tr>
+          <tr><td data-i18n="diff.harder">Harder</td><td class="num">12</td><td class="num" data-turns="21">21 turns</td><td class="num">41%</td><td class="num">58%</td><td class="num">60%</td></tr>
+          <tr><td data-i18n="diff.gentle">Gentle: plan every turn together</td><td class="num">12</td><td class="num" data-turns="23">23 turns</td><td class="num">95%</td><td class="num">95%</td><td class="num">93%</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="note" data-i18n="diff.note">A turn is one player's turn, not a full round. At about 45 seconds a turn, 26 turns is 20 minutes. Time your first game: if turns run longer, play Quick.</p>
+    <p class="note" data-i18n="diff.note">A turn is one player's turn, not a full round. At about 50 seconds a turn, 23 turns is about 20 minutes. Time your first game: if turns run longer, play Quick.</p>
   </section>
 
   <section class="section" id="why">
     <div class="section-head">
-      <p class="label" data-i18n="why.kicker">1000 simulated games per setup, 720 setups</p>
+      <p class="label" data-i18n="why.kicker">1000 simulated games per setup, 960 setups</p>
       <h2 data-i18n="why.title">Why these rules</h2>
       <p data-i18n="why.intro">Turns needed to find 12 treasures with 3 players. The bar is a typical game, the whisker runs out to a bad one (1 game in 10 takes longer).</p>
     </div>
@@ -396,16 +414,17 @@ tbody tr:last-child td { border-bottom: 0; }
     <ul class="findings">
       <li><p><strong data-i18n="why.f1.title">One shared pile.</strong> <span data-i18n="why.f1.body">With a pile each, the game lasts as long as the slowest pile, usually the youngest player's. Bad games run past 50 turns.</span></p></li>
       <li><p><strong data-i18n="why.f2.title">Face down.</strong> <span data-i18n="why.f2.body">With all cards face up there's almost always something reachable, so nobody needs to help anybody. One shared target keeps the table working together, and it's the easiest thing for a 6-year-old to keep in mind.</span></p></li>
-      <li><p><strong data-i18n="why.f3.title">Helping matters.</strong> <span data-i18n="why.f3.body">The same table playing only for themselves needs a median of 29 turns instead of 24, and loses most games at a 26-turn collapse.</span></p></li>
-      <li><p><strong data-i18n="why.f4.title">Everyone gets moments.</strong> <span data-i18n="why.f4.body">In a two-player game the youngest collects 58% of the treasures, because the other player keeps setting them up.</span></p></li>
+      <li><p><strong data-i18n="why.f3.title">Helping matters.</strong> <span data-i18n="why.f3.body">The same table playing only for themselves needs a median of 28 turns instead of 21, and loses most games at a 23-turn collapse.</span></p></li>
+      <li><p><strong data-i18n="why.f4.title">Everyone gets moments.</strong> <span data-i18n="why.f4.body">In a two-player game the youngest collects 59% of the treasures, because the other player keeps setting them up.</span></p></li>
+      <li><p><strong data-i18n="why.f5.title">One card of look-ahead.</strong> <span data-i18n="why.f5.body">Our first real game dragged without it. With the next treasure on show, a turn where you can't reach the target still has a use: head for the next one, wait on it, or collect and set up the next player with the same push. Games run 2 to 3 turns shorter, so the collapse comes 3 turns sooner for about the same odds (2 sooner with 2 players).</span></p></li>
     </ul>
   </section>
 
   <footer class="title-block">
     <div><p class="label" data-i18n="foot.name.label">Title</p><strong data-i18n="foot.name">Before the Maze Falls</strong></div>
     <div><p class="label" data-i18n="foot.players.label">Players</p><span data-i18n="foot.players">2–4, age 6+</span></div>
-    <div><p class="label" data-i18n="foot.treasures.label">Treasures</p><span data-i18n="foot.treasures">12, one pile, face down</span></div>
-    <div><p class="label" data-i18n="foot.collapse.label">Collapse</p><span data-i18n="foot.collapse">26 turns (28 for 2)</span></div>
+    <div><p class="label" data-i18n="foot.treasures.label">Treasures</p><span data-i18n="foot.treasures">12, one pile, face down, one look-ahead</span></div>
+    <div><p class="label" data-i18n="foot.collapse.label">Collapse</p><span data-i18n="foot.collapse">23 turns (26 for 2)</span></div>
   </footer>
 </div>
 

@@ -96,7 +96,7 @@ describe("the page template and the dictionaries", () => {
     for (const el of document.querySelectorAll("[data-i18n-aria]")) {
       expect(el.getAttribute("aria-label")).toBe(textOf(pt, keyOf(el, "data-i18n-aria")));
     }
-    expect([...document.querySelectorAll("[data-turns]")].map((el) => el.textContent)).toContain("20 jogadas");
+    expect([...document.querySelectorAll("[data-turns]")].map((el) => el.textContent)).toContain("18 jogadas");
 
     applyStatic(document, en);
     const fresh = document.createElement("div");

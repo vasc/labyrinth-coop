@@ -6,6 +6,9 @@ import { drawIcon, treasureIcon } from "./icons";
 export type HudElements = {
   icon: SVGSVGElement;
   name: HTMLElement;
+  /** The look-ahead card. */
+  nextIcon: SVGSVGElement;
+  nextName: HTMLElement;
   found: HTMLElement;
   left: HTMLElement;
   turn: HTMLElement;
@@ -14,7 +17,7 @@ export type HudElements = {
 };
 
 export type HudSetup = { collapseAfter: number; treasures: number };
-export type HudState = { target: number | null; found: number; turn: number };
+export type HudState = { target: number | null; ahead: number | null; found: number; turn: number };
 
 /** How many of the last track spaces are drawn dashed, as a warning. */
 const WARNING_SPACES = 3;
@@ -38,14 +41,16 @@ export class Hud {
       return space;
     });
     els.track.replaceChildren(...this.spaces);
+    els.track.style.setProperty("--spaces", String(setup.collapseAfter));
     els.icon.setAttribute("viewBox", "0 0 24 24");
+    els.nextIcon.setAttribute("viewBox", "0 0 24 24");
     this.caption = liveText(els.caption, i18n);
     i18n.onChange(() => {
       if (this.last !== null) this.render(this.last);
     });
   }
 
-  /** `target` is the face-up treasure, or null once every treasure is found. */
+  /** `target` is the face-up treasure, or null once every treasure is found; `ahead` the look-ahead card, if any. */
   show(state: HudState): void {
     this.last = state;
     this.render(state);
@@ -55,12 +60,15 @@ export class Hud {
     this.caption(text);
   }
 
-  private render({ target, found, turn }: HudState): void {
+  private render({ target, ahead, found, turn }: HudState): void {
     const { els, setup } = this;
     const m = this.i18n.m;
     els.icon.replaceChildren();
     drawIcon(els.icon, target === null ? Check : treasureIcon(target), 24, 12, 12);
     els.name.textContent = target === null ? m.hud.allFound : m.treasure(target);
+    els.nextIcon.replaceChildren();
+    if (ahead !== null) drawIcon(els.nextIcon, treasureIcon(ahead), 24, 12, 12);
+    els.nextName.textContent = ahead === null ? m.hud.none : m.treasure(ahead);
     els.found.textContent = `${found} / ${setup.treasures}`;
     els.left.textContent = String(setup.collapseAfter - turn);
     els.turn.textContent = m.hud.turnOf(turn, setup.collapseAfter);

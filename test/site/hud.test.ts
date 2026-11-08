@@ -10,6 +10,8 @@ const setup = () => {
   const els = {
     icon: document.createElementNS(SVG_NS, "svg"),
     name: document.createElement("strong"),
+    nextIcon: document.createElementNS(SVG_NS, "svg"),
+    nextName: document.createElement("strong"),
     found: document.createElement("b"),
     left: document.createElement("b"),
     turn: document.createElement("p"),
@@ -25,11 +27,12 @@ describe("Hud", () => {
     const { els } = setup();
     expect(els.track.children.length).toBe(26);
     expect(els.track.querySelectorAll(".edge").length).toBe(3);
+    expect(els.track.style.getPropertyValue("--spaces")).toBe("26");
   });
 
   test("shows the hunted treasure, the count found and the turns left", () => {
     const { els, hud } = setup();
-    hud.show({ target: 3, found: 4, turn: 9 });
+    hud.show({ target: 3, ahead: null, found: 4, turn: 9 });
     expect(els.name.textContent).toBe(en.treasure(3));
     expect(els.icon.querySelector(".icon")).not.toBeNull();
     expect(els.found.textContent).toBe("4 / 12");
@@ -38,16 +41,33 @@ describe("Hud", () => {
     expect(els.track.querySelectorAll(".on").length).toBe(9);
   });
 
+  test("shows the look-ahead card next to the target", () => {
+    const { els, hud } = setup();
+    hud.show({ target: 3, ahead: 5, found: 0, turn: 0 });
+    expect(els.nextName.textContent).toBe(en.treasure(5));
+    expect(els.nextIcon.querySelectorAll(".icon").length).toBe(1);
+    hud.show({ target: 5, ahead: 7, found: 1, turn: 1 });
+    expect(els.nextName.textContent).toBe(en.treasure(7));
+    expect(els.nextIcon.querySelectorAll(".icon").length).toBe(1);
+  });
+
+  test("shows no look-ahead once the last card is the target", () => {
+    const { els, hud } = setup();
+    hud.show({ target: 3, ahead: null, found: 11, turn: 20 });
+    expect(els.nextName.textContent).toBe(en.hud.none);
+    expect(els.nextIcon.querySelectorAll(".icon").length).toBe(0);
+  });
+
   test("redraws the icon instead of stacking icons", () => {
     const { els, hud } = setup();
-    hud.show({ target: 3, found: 0, turn: 0 });
-    hud.show({ target: 5, found: 1, turn: 1 });
+    hud.show({ target: 3, ahead: null, found: 0, turn: 0 });
+    hud.show({ target: 5, ahead: null, found: 1, turn: 1 });
     expect(els.icon.querySelectorAll(".icon").length).toBe(1);
   });
 
   test("shows that everything is found once the pile is empty", () => {
     const { els, hud } = setup();
-    hud.show({ target: null, found: 12, turn: 20 });
+    hud.show({ target: null, ahead: null, found: 12, turn: 20 });
     expect(els.name.textContent).toBe(en.hud.allFound);
     expect(els.found.textContent).toBe("12 / 12");
     expect(els.icon.querySelectorAll(".icon").length).toBe(1);
@@ -61,10 +81,11 @@ describe("Hud", () => {
 
   test("redraws the card, turn count and caption in the new language when it changes", () => {
     const { els, hud, i18n } = setup();
-    hud.show({ target: 0, found: 4, turn: 9 });
+    hud.show({ target: 0, ahead: 13, found: 4, turn: 9 });
     hud.say((m) => m.live.found(0, 4, 12));
     i18n.set("pt");
     expect(els.name.textContent).toBe(pt.treasure(0));
+    expect(els.nextName.textContent).toBe("Mapa");
     expect(els.turn.textContent).toBe("Jogada 9 de 26");
     expect(els.caption.textContent).toBe("Encontraram a Coroa. 4 de 12.");
     expect(els.found.textContent).toBe("4 / 12");

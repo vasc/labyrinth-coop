@@ -24,11 +24,13 @@ export const STATIC_KEYS = [
   "hero.kid",
   "hero.adults",
   "hero.target",
+  "hero.ahead",
   "hero.faded",
   "fig1.aria",
   "fig1.label",
   "fig1.board",
   "fig1.hunting",
+  "fig1.next",
   "fig1.found",
   "fig1.left",
   "setup.kicker",
@@ -77,6 +79,7 @@ export const STATIC_KEYS = [
   "sac.tip2",
   "sac.tip3",
   "sac.tip4",
+  "sac.tip5",
   "sac.note",
   "rules.kicker",
   "rules.title",
@@ -92,6 +95,10 @@ export const STATIC_KEYS = [
   "rules.r5.body",
   "rules.r6.label",
   "rules.r6.body",
+  "rules.r7.label",
+  "rules.r7.body",
+  "rules.r8.label",
+  "rules.r8.body",
   "diff.kicker",
   "diff.title",
   "diff.intro",
@@ -119,6 +126,8 @@ export const STATIC_KEYS = [
   "why.f3.body",
   "why.f4.title",
   "why.f4.body",
+  "why.f5.title",
+  "why.f5.body",
   "foot.name.label",
   "foot.name",
   "foot.players.label",
@@ -134,7 +143,7 @@ const STATIC_SET: ReadonlySet<string> = new Set(STATIC_KEYS);
 export const isStaticKey = (value: string): value is StaticKey => STATIC_SET.has(value);
 
 /** The rule variants in the "Why these rules" chart. */
-export type ChartRowId = "shared" | "personal" | "faceUp" | "noHelp";
+export type ChartRowId = "lookAhead" | "shared" | "personal" | "faceUp" | "noHelp";
 
 /**
  * Everything the page says, in one language. Sentences that name a treasure or a seat take its id and build the
@@ -153,13 +162,18 @@ export type Messages = {
   /** The play toggle's label says what pressing it will do. */
   pause: string;
   play: string;
-  hud: { allFound: string; turnOf: (turn: number, total: number) => string };
+  /** `none`: the look-ahead slot once the last card is the target. */
+  hud: { allFound: string; none: string; turnOf: (turn: number, total: number) => string };
   live: {
     intro: (players: number, treasure: number) => string;
     reach: (seat: number, treasure: number) => string;
     push: (seat: number, treasure: number, next: number) => string;
     closer: (seat: number, treasure: number) => string;
     cannot: (seat: number, treasure: number) => string;
+    /** Collects the target with a push that also opens the look-ahead treasure to the next seat. */
+    reachSetsUp: (seat: number, treasure: number, ahead: number, next: number) => string;
+    heads: (seat: number, treasure: number, ahead: number) => string;
+    waits: (seat: number, treasure: number, ahead: number) => string;
     found: (treasure: number, found: number, total: number) => string;
     won: (total: number, spare: number) => string;
     lost: (left: number) => string;

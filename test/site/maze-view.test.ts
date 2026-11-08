@@ -11,7 +11,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const setup = () => {
   const svg = document.createElementNS(SVG_NS, "svg");
   document.body.appendChild(svg);
-  const state = newGame({ players: 3, treasures: 12, deck: { pile: "shared", reveal: 1 } }, mulberry32(5));
+  const state = newGame({ players: 3, treasures: 12, deck: { pile: "shared", reveal: 1, preview: 0 } }, mulberry32(5));
   const view = new MazeView(svg, state.board, state.pawns, instantMotion);
   return { svg, state, view };
 };
@@ -59,6 +59,19 @@ describe("MazeView", () => {
     expect([...svg.querySelectorAll(".target")].map((t) => t.getAttribute("data-treasure"))).toEqual(["7"]);
     view.setTargets([2]);
     expect([...svg.querySelectorAll(".target")].map((t) => t.getAttribute("data-treasure"))).toEqual(["2"]);
+  });
+
+  test("marks the look-ahead treasures apart from the targets, and drops the mark once found", async () => {
+    const { svg, view } = setup();
+    view.setTargets([7]);
+    view.setLookAhead([2]);
+    expect([...svg.querySelectorAll(".ahead")].map((t) => t.getAttribute("data-treasure"))).toEqual(["2"]);
+    expect([...svg.querySelectorAll(".target")].map((t) => t.getAttribute("data-treasure"))).toEqual(["7"]);
+    view.setLookAhead([]);
+    expect(svg.querySelectorAll(".ahead").length).toBe(0);
+    view.setLookAhead([2]);
+    await view.markFound(2);
+    expect(svg.querySelectorAll(".ahead").length).toBe(0);
   });
 
   test("after every push, with the spare turned each way, the drawing matches the rules", async () => {

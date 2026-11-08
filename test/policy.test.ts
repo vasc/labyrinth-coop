@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { CELLS, SHIFTS, applyShift, cellOf, createBoard, legalShiftOptions, reachable } from "../src/board";
+import { CELLS, E, SHIFTS, W, applyShift, cellOf, createBoard, legalShiftOptions, reachable } from "../src/board";
 import { type GameConfig, type GameState, newGame, playTurn } from "../src/game";
 import {
   type Candidate,
@@ -7,7 +7,10 @@ import {
   type Policy,
   chanceToFind,
   decide,
+  distanceToShown,
+  distanceToTreasure,
   evaluate,
+  isIdle,
   isSacrifice,
   optionsSeen,
   visionCount,
@@ -34,9 +37,9 @@ const randomState = (seed: number, config: GameConfig): GameState => {
 };
 
 const configs: GameConfig[] = [
-  { players: 2, treasures: 12, deck: { pile: "personal", reveal: 1 } },
-  { players: 3, treasures: 12, deck: { pile: "shared", reveal: 1 } },
-  { players: 4, treasures: 16, deck: { pile: "personal", reveal: Number.POSITIVE_INFINITY } },
+  { players: 2, treasures: 12, deck: { pile: "personal", reveal: 1, preview: 0 } },
+  { players: 3, treasures: 12, deck: { pile: "shared", reveal: 1, preview: 0 } },
+  { players: 4, treasures: 16, deck: { pile: "personal", reveal: Number.POSITIVE_INFINITY, preview: 0 } },
 ];
 const cases = configs.flatMap((config) => Array.from({ length: 40 }, (_, seed) => ({ config, seed })));
 const seats = (players: number, seat: number, policy: Policy): Policy[] =>
@@ -61,7 +64,7 @@ describe("vision", () => {
   });
 
   test("only works out that many pushes", () => {
-    const options = legalShiftOptions(newGame(configs[0] ?? { players: 2, treasures: 2, deck: { pile: "shared", reveal: 1 } }, mulberry32(1)).board, null);
+    const options = legalShiftOptions(newGame(configs[0] ?? { players: 2, treasures: 2, deck: { pile: "shared", reveal: 1, preview: 0 } }, mulberry32(1)).board, null);
     expect(optionsSeen({ plans: true, vision: 0.25 }, options, mulberry32(2)).length).toBe(visionCount({ plans: true, vision: 0.25 }, options.length));
     expect(optionsSeen(planner, options, mulberry32(2)).length).toBe(options.length);
   });
@@ -142,7 +145,7 @@ describe("pushing your own target off the board", () => {
     board: createBoard(new Array<number>(CELLS).fill(0), treasure, 0, -1),
     pawns: [cellOf(0, 0), cellOf(6, 6)],
     piles: [[4], [9]],
-    deck: { pile: "personal", reveal: 1 },
+    deck: { pile: "personal", reveal: 1, preview: 0 },
     lastShift: null,
     collected: 0,
     total: 2,
@@ -152,6 +155,137 @@ describe("pushing your own target off the board", () => {
     for (let seed = 0; seed < 30; seed++) {
       expect(decide(state, 0, [solo, solo], mulberry32(seed)).option.shift).not.toBe(pushDownCol1);
     }
+  });
+});
+
+describe("with a look-ahead card", () => {
+  // Closed board except a corridor on row 0 from (0,2) to (0,4), all on fixed tiles. The pawn on (0,2) cannot reach
+  // the target at (6,0); the look-ahead treasure is at the far end of its corridor, (0,4).
+  const stuck = (preview: number): GameState => {
+    const open = new Array<number>(CELLS).fill(0);
+    const treasure = new Array<number>(CELLS).fill(-1);
+    open[cellOf(0, 2)] = E;
+    open[cellOf(0, 3)] = E | W;
+    open[cellOf(0, 4)] = W;
+    treasure[cellOf(6, 0)] = 5;
+    treasure[cellOf(0, 4)] = 6;
+    return {
+      board: createBoard(open, treasure, 0, -1),
+      pawns: [cellOf(0, 2), cellOf(6, 6)],
+      piles: [[5, 6]],
+      deck: { pile: "shared", reveal: 1, preview },
+      lastShift: null,
+      collected: 0,
+      total: 2,
+    };
+  };
+
+  test("a player who cannot reach the target walks onto the look-ahead treasure and waits there", () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const choice = decide(stuck(1), 0, [solo, solo], mulberry32(seed));
+      expect(choice.collects).toBe(false);
+      const after = applyShift(stuck(1).board, stuck(1).pawns, choice.option);
+      expect(after.board.treasure[choice.dest]).toBe(6);
+      expect(choice.distance).toBe(0);
+    }
+  });
+
+  test("without one, the same player heads for the target instead", () => {
+    for (let seed = 0; seed < 20; seed++) {
+      expect(decide(stuck(0), 0, [solo, solo], mulberry32(seed)).dest).toBe(cellOf(0, 2));
+    }
+  });
+
+  test("a camper whose treasure became the target collects it, never taking the push that throws them off it", () => {
+    // The camper stands on (1,6), the east end of movable row 1. Pushing row 1 east ejects their tile and its treasure.
+    const pushEastRow1 = SHIFTS.findIndex((s) => s.axis === "row" && s.line === 1 && s.dir === 1);
+    const treasure = new Array<number>(CELLS).fill(-1);
+    treasure[cellOf(1, 6)] = 6;
+    const camper: GameState = {
+      board: createBoard(new Array<number>(CELLS).fill(0), treasure, 0, -1),
+      pawns: [cellOf(1, 6), cellOf(6, 6)],
+      piles: [[6, 7]],
+      deck: { pile: "shared", reveal: 1, preview: 1 },
+      lastShift: null,
+      collected: 1,
+      total: 3,
+    };
+    for (let seed = 0; seed < 20; seed++) {
+      const choice = decide(camper, 0, [planner, planner], mulberry32(seed));
+      expect(choice.collects).toBe(true);
+      expect(choice.option.shift).not.toBe(pushEastRow1);
+      expect(playTurn(camper, 0, choice.option, choice.dest).collected).toBe(6);
+    }
+  });
+
+  test("a planner who collects can also set up the next player for the look-ahead treasure, which it can't without one", () => {
+    const shared = (preview: number): GameConfig => ({ players: 3, treasures: 12, deck: { pile: "shared", reveal: 1, preview } });
+    let setupsWhileCollecting = 0;
+    for (let seed = 0; seed < 120; seed++) {
+      for (const preview of [0, 1]) {
+        const state = randomState(seed, shared(preview));
+        const player = seed % 3;
+        const options = legalShiftOptions(state.board, state.lastShift);
+        const collecting = evaluate(state, player, seats(3, -1, planner), options, mulberry32(seed)).filter((c) => c.collects);
+        if (preview === 0) expect(collecting.every((c) => c.setup === 0)).toBe(true);
+        else setupsWhileCollecting += collecting.filter((c) => c.setup > 0).length;
+      }
+    }
+    expect(setupsWhileCollecting).toBeGreaterThan(0);
+  });
+});
+
+describe("idle turns", () => {
+  const decision = (setup: number, distance: number, collects = false) => ({
+    option: { shift: 0, spareOpen: 5 },
+    dest: 0,
+    collects,
+    setup,
+    distance,
+    sacrifice: false,
+  });
+
+  test("are turns that collect nothing, set nobody up and get no closer to a shown treasure", () => {
+    expect(isIdle(decision(0, 4), 4)).toBe(true);
+    expect(isIdle(decision(0, 5), 4)).toBe(true);
+  });
+
+  test("getting closer, setting someone up, collecting or waiting on a treasure is not idle", () => {
+    expect(isIdle(decision(0, 3), 4)).toBe(false);
+    expect(isIdle(decision(0.5, 4), 4)).toBe(false);
+    expect(isIdle(decision(0, 0, true), 4)).toBe(false);
+    expect(isIdle(decision(0, 0), 0)).toBe(false);
+  });
+
+  test("with nothing to chase, every turn that sets nobody up is idle", () => {
+    expect(isIdle(decision(0, 0), null)).toBe(true);
+    expect(isIdle(decision(0.5, 0), null)).toBe(false);
+  });
+
+  test("distance before the turn is measured to the target or the look-ahead, whichever is nearer", () => {
+    const treasure = new Array<number>(CELLS).fill(-1);
+    treasure[cellOf(6, 0)] = 5;
+    treasure[cellOf(0, 4)] = 6;
+    const state = (preview: number): GameState => ({
+      board: createBoard(new Array<number>(CELLS).fill(0), treasure, 0, -1),
+      pawns: [cellOf(0, 2)],
+      piles: [[5, 6]],
+      deck: { pile: "shared", reveal: 1, preview },
+      lastShift: null,
+      collected: 0,
+      total: 2,
+    });
+    expect(distanceToShown(state(1), 0)).toBe(2);
+    expect(distanceToShown(state(0), 0)).toBe(8);
+    expect(distanceToShown({ ...state(0), piles: [[]] }, 0)).toBeNull();
+  });
+
+  test("distance to one treasure is null while it is on the spare tile", () => {
+    const treasure = new Array<number>(CELLS).fill(-1);
+    treasure[cellOf(6, 0)] = 5;
+    const board = createBoard(new Array<number>(CELLS).fill(0), treasure, 0, 9);
+    expect(distanceToTreasure(board, cellOf(0, 2), 5)).toBe(8);
+    expect(distanceToTreasure(board, cellOf(0, 2), 9)).toBeNull();
   });
 });
 
@@ -183,7 +317,7 @@ describe("sacrifice", () => {
 
 describe("solo", () => {
   test("never plans for the next player", () => {
-    const config = configs[1] ?? { players: 2, treasures: 2, deck: { pile: "shared", reveal: 1 } };
+    const config = configs[1] ?? { players: 2, treasures: 2, deck: { pile: "shared", reveal: 1, preview: 0 } };
     for (let seed = 0; seed < 20; seed++) {
       const state = randomState(seed, config);
       const policies = Array.from({ length: config.players }, () => solo);

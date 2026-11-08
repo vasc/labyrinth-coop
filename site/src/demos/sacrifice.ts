@@ -22,7 +22,7 @@ const PLANNERS = [PERFECT_PLANNER, PERFECT_PLANNER];
 const RARE_SETUP = 0.3;
 
 export const sacrificeGame = (seed: number): GameState =>
-  newGame({ players: 2, treasures: 12, deck: { pile: "shared", reveal: 1 } }, mulberry32(seed));
+  newGame({ players: 2, treasures: 12, deck: { pile: "shared", reveal: 1, preview: 0 } }, mulberry32(seed));
 
 /**
  * Searches seeds in [from, to) for an opening position that shows a real sacrifice: ● cannot collect, ■ could not

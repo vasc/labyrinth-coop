@@ -4,16 +4,16 @@ import { type Rng, mulberry32 } from "../../../src/rng";
 import type { Text } from "../i18n/types";
 import { MazeView } from "../maze-view";
 import type { Motion } from "../motion";
+import { COLLAPSE_AFTER } from "./live-game";
 
 /** The rules list steps: push, walk, collect, marker. */
 export type Step = 0 | 1 | 2 | 3;
 export type OneTurnDeps = { view: MazeView; motion: Motion; mark: (step: Step, label: Text) => void };
 
 const SOLO: Policy[] = [{ plans: false, vision: 1 }];
-const COLLAPSE_AFTER = 26;
 const TURNS_PER_BOARD = 10;
 
-export const oneTurnGame = (rng: Rng): GameState => newGame({ players: 1, treasures: 6, deck: { pile: "shared", reveal: 1 } }, rng);
+export const oneTurnGame = (rng: Rng): GameState => newGame({ players: 1, treasures: 6, deck: { pile: "shared", reveal: 1, preview: 0 } }, rng);
 
 /** Plays one turn step by step, telling the rules list which step is happening. */
 export const playOneTurn = async (deps: OneTurnDeps, state: GameState, rng: Rng, turn: number): Promise<GameState> => {

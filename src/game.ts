@@ -19,6 +19,11 @@ export type DeckMode = {
    * top card is turned over (and, this being co-op, shown to everyone); a number at least the pile size shows them all.
    */
   reveal: number;
+  /**
+   * How many cards after the face-up ones are also turned over (the look-ahead). The whole table sees them, but
+   * nobody can collect one until the cards before it are gone.
+   */
+  preview: number;
 };
 
 export type GameConfig = { players: number; treasures: number; deck: DeckMode };
@@ -58,6 +63,10 @@ export const pileIndex = (state: GameState, player: number): number => (state.de
 /** Treasures this player may collect right now: the face-up cards of the pile they draw from. */
 export const visibleTargets = (state: GameState, player: number): number[] =>
   (state.piles[pileIndex(state, player)] ?? []).slice(0, state.deck.reveal);
+
+/** The look-ahead cards of the pile this player draws from: shown to everyone, not yet collectable. */
+export const previewCards = (state: GameState, player: number): number[] =>
+  (state.piles[pileIndex(state, player)] ?? []).slice(state.deck.reveal, state.deck.reveal + state.deck.preview);
 
 export const isOver = (state: GameState): boolean => state.collected === state.total;
 

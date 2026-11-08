@@ -13,13 +13,14 @@ export type ChartRow = {
 
 /**
  * From the simulator sweep (results/report.md): 12 treasures, 3 players, the youngest playing their own turns
- * at 20% vision, adults planning at 40% vision. 1000 games per row.
+ * at 20% vision, adults planning at 40% vision. 1000 games per row. "noHelp" plays the house rules, look-ahead included.
  */
 export const CHART_ROWS: readonly ChartRow[] = [
-  { id: "shared", typical: 24, bad: 30, sacrifices: 3.1, ours: true },
+  { id: "lookAhead", typical: 21, bad: 27, sacrifices: 2.1, ours: true },
+  { id: "shared", typical: 24, bad: 30, sacrifices: 3.1 },
   { id: "personal", typical: 29, bad: 52, sacrifices: 1.7 },
   { id: "faceUp", typical: 15, bad: 18, sacrifices: 0.5 },
-  { id: "noHelp", typical: 29, bad: 46, sacrifices: 0 },
+  { id: "noHelp", typical: 28, bad: 48, sacrifices: 0 },
 ];
 
 const div = (className: string, parent: HTMLElement): HTMLDivElement => {

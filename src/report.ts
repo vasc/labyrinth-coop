@@ -7,6 +7,7 @@ export type Row = {
   treasures: number;
   pile: "shared" | "personal";
   reveal: number;
+  preview: number;
   composition: Composition;
   kidVision: number;
   adultVision: number;
@@ -18,6 +19,8 @@ export type Row = {
   kidRate: number;
   sacrificesPerGame: number;
   assistsPerGame: number;
+  idleTurnsPerGame: number;
+  collectSetupsPerGame: number;
 };
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -60,6 +63,7 @@ export const parseRows = (json: unknown): Row[] => {
       treasures: num(config.treasures, "treasures"),
       pile: pile(deck.pile),
       reveal: num(deck.reveal, "reveal"),
+      preview: num(deck.preview, "preview"),
       composition: composition(config.composition),
       kidVision: num(config.kidVision, "kidVision"),
       adultVision: num(config.adultVision, "adultVision"),
@@ -71,12 +75,17 @@ export const parseRows = (json: unknown): Row[] => {
       kidRate: num(summary.kidRate, "kidRate"),
       sacrificesPerGame: num(summary.sacrificesPerGame, "sacrificesPerGame"),
       assistsPerGame: num(summary.assistsPerGame, "assistsPerGame"),
+      idleTurnsPerGame: num(summary.idleTurnsPerGame, "idleTurnsPerGame"),
+      collectSetupsPerGame: num(summary.collectSetupsPerGame, "collectSetupsPerGame"),
     };
   });
 };
 
-export const revealLabel = (reveal: number): string =>
-  reveal === 1 ? "face down" : reveal >= ALL ? "face up" : `${reveal} face up`;
+export const revealLabel = (reveal: number, preview: number): string => {
+  const cards = reveal === 1 ? "face down" : reveal >= ALL ? "face up" : `${reveal} face up`;
+  if (preview === 0) return cards;
+  return `${cards} + ${preview === 1 ? "" : `${preview} `}look-ahead`;
+};
 
 export const visionLabel = (vision: number): string => (vision >= PERFECT_VISION ? "all" : `${Math.round(vision * 100)}% of the`);
 
@@ -88,7 +97,7 @@ export const turnsTable = (rows: readonly Row[], match: (r: Row) => boolean): st
   const lines = ["| pile | cards | treasures | 2 players | 3 players | 4 players |", "|---|---|---|---|---|---|"];
   const groups = new Map<string, Row[]>();
   for (const r of picked) {
-    const key = `${r.pile}|${r.reveal}|${r.treasures}`;
+    const key = `${r.pile}|${r.reveal}|${r.preview}|${r.treasures}`;
     groups.set(key, [...(groups.get(key) ?? []), r]);
   }
   for (const group of groups.values()) {
@@ -98,7 +107,7 @@ export const turnsTable = (rows: readonly Row[], match: (r: Row) => boolean): st
       const r = group.find((g) => g.players === players);
       return r === undefined ? "" : `${turns(r.p50)} / ${turns(r.p75)} / ${turns(r.p90)}`;
     };
-    lines.push(`| ${first.pile} | ${revealLabel(first.reveal)} | ${first.treasures} | ${cell(2)} | ${cell(3)} | ${cell(4)} |`);
+    lines.push(`| ${first.pile} | ${revealLabel(first.reveal, first.preview)} | ${first.treasures} | ${cell(2)} | ${cell(3)} | ${cell(4)} |`);
   }
   return lines.join("\n");
 };
@@ -108,12 +117,12 @@ const pct = (n: number): string => `${Math.round(n * 100)}%`;
 /** How much the kid seat gets to do and how often adults give up their turn for the next player. */
 export const teamworkTable = (rows: readonly Row[], match: (r: Row) => boolean): string => {
   const lines = [
-    "| pile | cards | treasures | players | kid seat's share of treasures | sacrifices / game | assists / game |",
-    "|---|---|---|---|---|---|---|",
+    "| pile | cards | treasures | players | kid seat's share of treasures | sacrifices / game | assists / game | collect-and-setups / game | idle turns / game |",
+    "|---|---|---|---|---|---|---|---|---|",
   ];
   for (const r of rows.filter(match)) {
     lines.push(
-      `| ${r.pile} | ${revealLabel(r.reveal)} | ${r.treasures} | ${r.players} | ${pct(r.kidShare)} (fair: ${pct(1 / r.players)}) | ${r.sacrificesPerGame.toFixed(1)} | ${r.assistsPerGame.toFixed(1)} |`,
+      `| ${r.pile} | ${revealLabel(r.reveal, r.preview)} | ${r.treasures} | ${r.players} | ${pct(r.kidShare)} (fair: ${pct(1 / r.players)}) | ${r.sacrificesPerGame.toFixed(1)} | ${r.assistsPerGame.toFixed(1)} | ${r.collectSetupsPerGame.toFixed(1)} | ${r.idleTurnsPerGame.toFixed(1)} |`,
     );
   }
   return lines.join("\n");
