@@ -56,7 +56,7 @@ const ofThe = (id: number) => {
   return `${n.feminine ? "da" : "do"}${plural(n)} ${n.name}`;
 };
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-const TITLE = "Antes que o Labirinto Caia";
+const TITLE = "Até o labirinto ruir";
 
 export const pt: Messages = {
   htmlLang: "pt-PT",
@@ -110,8 +110,8 @@ export const pt: Messages = {
   text: {
     "lang.aria": "Idioma",
     "hero.kicker": "Regras cooperativas da casa para o jogo do labirinto deslizante",
-    "hero.title1": "Antes que o Labirinto",
-    "hero.title2": "Caia",
+    "hero.title1": "Até o labirinto",
+    "hero.title2": "ruir",
     "hero.lede":
       "Jogam todos do mesmo lado. Encontrem os 12 tesouros antes que o labirinto desabe. Se não conseguires chegar ao tesouro, empurra o labirinto para que o jogador seguinte consiga.",
     "hero.players": "2–4 jogadores",
