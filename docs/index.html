@@ -1,0 +1,398 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Before the Maze Falls</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a technical drawing on grid paper. Hatched walls, ink corridors, mono annotations, one live board as the hero. */
+:root {
+  --paper: #ffffff;
+  --ink: #0b0b0b;
+  --ink-2: #5a5a5a;
+  --line: #cdcdcd;
+  --hatch: #c2c2c2;
+  --grid: #f0f0f0;
+  --display: "Big Shoulders Display", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0b0b0b; --ink: #f2f2f2; --ink-2: #a3a3a3; --line: #383838; --hatch: #3d3d3d; --grid: #151515;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0b0b0b; --ink: #f2f2f2; --ink-2: #a3a3a3; --line: #383838; --hatch: #3d3d3d; --grid: #151515;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--ink);
+  font: 400 16px/1.6 var(--body);
+}
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.label {
+  font: 500 12px/1.4 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 0;
+}
+h1, h2, h3 { font-family: var(--display); text-transform: uppercase; margin: 0; text-wrap: balance; }
+h1 { font-weight: 800; font-size: clamp(60px, 10.5vw, 128px); line-height: 0.86; letter-spacing: -0.005em; }
+h1 .outline { display: block; }
+@supports (-webkit-text-stroke: 1px black) {
+  h1 .outline { color: transparent; -webkit-text-stroke: 2px var(--ink); }
+}
+h2 { font-weight: 800; font-size: clamp(38px, 5.4vw, 60px); line-height: 0.92; }
+h3 { font-weight: 800; font-size: 24px; line-height: 1.05; letter-spacing: 0.01em; }
+p { margin: 0; max-width: 62ch; }
+strong { font-weight: 600; }
+a { color: inherit; }
+:focus-visible { outline: 2px dashed var(--ink); outline-offset: 3px; }
+
+/* Hero */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
+  gap: 40px;
+  align-items: start;
+  padding-block: 12px 48px;
+}
+.hero-text { display: grid; gap: 22px; align-content: start; padding-top: 8px; }
+.lede { font-size: 19px; line-height: 1.5; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.facts li {
+  font: 500 12px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid var(--ink); padding: 8px 10px; background: var(--paper);
+}
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 400 13px/1.4 var(--mono); color: var(--ink-2); margin: 0; padding: 0; list-style: none; }
+
+.fig { margin: 0; border: 1px solid var(--ink); background: var(--paper); display: grid; min-width: 0; }
+.fig svg.board { display: block; width: 100%; height: auto; }
+.fig > .fig-head {
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--ink); padding: 8px 12px;
+}
+.fig-tools { display: flex; align-items: center; gap: 12px; }
+.play-toggle {
+  font: 500 11px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink); background: var(--paper); border: 1px solid var(--ink); padding: 5px 8px; cursor: pointer;
+}
+.play-toggle[data-paused="true"] { background: var(--ink); color: var(--paper); }
+.fig > figcaption { border-top: 1px solid var(--ink); padding: 12px; display: grid; gap: 12px; }
+
+.hud { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px 16px; align-items: center; }
+.card {
+  display: grid; justify-items: center; gap: 4px; width: 84px; padding: 8px 6px;
+  border: 1px solid var(--ink); background: var(--paper);
+}
+.card svg { width: 40px; height: 40px; }
+.card strong { font: 600 13px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+.stats { display: grid; gap: 8px; min-width: 0; }
+.stat-row { display: flex; gap: 20px; flex-wrap: wrap; font: 500 13px/1.3 var(--mono); font-variant-numeric: tabular-nums; }
+.stat-row span { color: var(--ink-2); }
+.track { display: grid; grid-template-columns: repeat(26, minmax(0, 1fr)); gap: 2px; }
+.track i { display: block; height: 14px; border: 1px solid var(--ink); background: var(--paper); }
+.track i.on { background: var(--ink); }
+.track i.edge { border-style: dashed; }
+.caption { font: 400 14px/1.45 var(--mono); min-height: 2.9em; grid-column: 1 / -1; }
+
+/* Sections */
+.section { display: grid; gap: 28px; padding-block: 56px; border-top: 1px dashed var(--ink-2); }
+.section-head { display: grid; gap: 10px; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+.stack { display: grid; gap: 18px; min-width: 0; }
+
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: step; }
+.steps li {
+  counter-increment: step;
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px;
+  padding-block: 14px; border-bottom: 1px solid var(--line);
+}
+.steps li:first-child { border-top: 1px solid var(--line); }
+.steps li::before {
+  content: counter(step);
+  display: grid; place-items: center; width: 40px; height: 40px;
+  border: 1px solid var(--ink); font: 500 16px/1 var(--mono); background: var(--paper);
+  transition: background-color 0.2s, color 0.2s;
+}
+.steps li.active::before { background: var(--ink); color: var(--paper); }
+.steps li > div { display: grid; gap: 4px; min-width: 0; }
+.steps .must { font: 500 11px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
+
+.rules { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0; border-top: 1px solid var(--ink); border-left: 1px solid var(--ink); }
+.rules li { border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 16px; display: grid; gap: 6px; align-content: start; background: var(--paper); }
+.rules li .label { color: var(--ink); }
+
+.ends { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border: 1px solid var(--ink); }
+.ends > div { padding: 20px; display: grid; gap: 8px; align-content: start; background: var(--paper); }
+.ends > div + div { border-left: 1px solid var(--ink); background-image: repeating-linear-gradient(45deg, var(--grid) 0 1px, transparent 1px 8px); }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--ink); background: var(--paper); }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-variant-numeric: tabular-nums; }
+th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 11px/1.3 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); border-bottom: 1px solid var(--ink); }
+td.num, th.num { text-align: right; font-family: var(--mono); }
+tr.pick td { font-weight: 600; }
+tr.pick td:first-child { box-shadow: inset 4px 0 0 var(--ink); }
+tbody tr:last-child td { border-bottom: 0; }
+.note { font-size: 14px; color: var(--ink-2); }
+
+/* Chart */
+.chart { display: grid; gap: 18px; border: 1px solid var(--ink); background: var(--paper); padding: 20px 16px 16px; }
+.bar-row { display: grid; gap: 6px; }
+.bar-row .bar-label { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 15px; }
+.bar-row .bar-label span { font: 400 13px/1.5 var(--mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.bar-track { position: relative; height: 20px; }
+.bar-track .bar {
+  position: absolute; left: 0; top: 0; bottom: 0; border: 1px solid var(--ink);
+  background: repeating-linear-gradient(45deg, var(--hatch) 0 1px, var(--paper) 1px 6px);
+}
+.bar-row.ours .bar { background: var(--ink); }
+.bar-track .whisker { position: absolute; top: 50%; height: 1px; background: var(--ink); }
+.bar-track .whisker::after { content: ""; position: absolute; right: 0; top: -6px; height: 13px; border-right: 1px solid var(--ink); }
+.axis { position: relative; height: 18px; border-top: 1px solid var(--ink); font: 400 11px/1 var(--mono); color: var(--ink-2); }
+.axis span { position: absolute; top: 5px; transform: translateX(-50%); }
+.chart-body { position: relative; display: grid; gap: 16px; }
+.collapse-line { position: absolute; top: 0; bottom: -18px; border-left: 1px dashed var(--ink); pointer-events: none; }
+.collapse-line span { position: absolute; top: -18px; left: 4px; white-space: nowrap; font: 500 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.findings { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.findings li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; }
+.findings li::before { content: "→"; font-family: var(--mono); }
+
+/* Title block */
+.title-block { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; border: 1px solid var(--ink); background: var(--paper); margin-top: 8px; }
+.title-block > div { padding: 12px 14px; display: grid; gap: 4px; border-right: 1px solid var(--ink); min-width: 0; }
+.title-block > div:last-child { border-right: 0; }
+.title-block strong { font: 800 22px/1 var(--display); text-transform: uppercase; }
+.title-block span { font: 400 13px/1.4 var(--mono); }
+
+/* Board drawing */
+.tile-paper { fill: var(--paper); }
+.hatch-line { stroke: var(--hatch); stroke-width: 1; }
+.tile-edge { fill: none; stroke: var(--line); stroke-width: 1; }
+.wall { fill: none; stroke: var(--ink); stroke-linejoin: miter; }
+.floor { fill: none; stroke: var(--paper); stroke-linejoin: miter; }
+.fix { stroke: var(--ink); stroke-width: 1; }
+.icon { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.treasure .disc { fill: var(--paper); }
+.treasure .ring { fill: none; stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; display: none; }
+.treasure.target .disc { fill: var(--ink); }
+.treasure.target .icon { stroke: var(--paper); }
+.treasure.target .ring { display: inline; animation: ants 1.2s linear infinite; }
+.treasure.found .icon { opacity: 0.25; }
+@keyframes ants { to { stroke-dashoffset: -12; } }
+.pawn { fill: var(--ink); stroke: var(--paper); stroke-width: 2; }
+.frame { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.arrow { fill: var(--paper); stroke: var(--ink-2); stroke-width: 1; }
+.arrow.active { fill: var(--ink); stroke: var(--ink); }
+.shake { animation: shake 0.35s; }
+@keyframes shake { 25% { transform: translate(-2px, 1px); } 50% { transform: translate(2px, -1px); } 75% { transform: translate(-1px, 0); } }
+
+@media (max-width: 880px) {
+  .hero, .two { grid-template-columns: minmax(0, 1fr); }
+  .title-block { grid-template-columns: 1fr 1fr; }
+  .title-block > div:nth-child(2) { border-right: 0; }
+  .title-block > div:nth-child(-n+2) { border-bottom: 1px solid var(--ink); }
+}
+@media (max-width: 560px) {
+  .ends { grid-template-columns: minmax(0, 1fr); }
+  .ends > div + div { border-left: 0; border-top: 1px solid var(--ink); }
+  .lede { font-size: 17px; }
+  .hud { grid-template-columns: minmax(0, 1fr); }
+  .card { grid-template-columns: auto auto; width: auto; justify-self: start; gap: 10px; align-items: center; }
+  .card .label { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .treasure.target .ring { animation: none; }
+  .shake { animation: none; }
+  .steps li::before { transition: none; }
+}
+</style>
+
+<div class="page">
+  <header class="hero">
+    <div class="hero-text">
+      <p class="label">Co-op house rules for the sliding-maze board game</p>
+      <h1>Before the Maze <span class="outline">Falls</span></h1>
+      <p class="lede">Everyone plays on the same side. Find all 12 treasures before the labyrinth collapses. When you can't reach the treasure yourself, push the maze so the next player can.</p>
+      <ul class="facts">
+        <li>2–4 players</li>
+        <li>Age 6 and up</li>
+        <li>About 20 min</li>
+        <li>One shared pile</li>
+      </ul>
+      <ul class="legend" aria-label="Pawns on the board">
+        <li>● The youngest, playing their own turns</li>
+        <li>■ ▲ Grown-ups, setting up the next player</li>
+        <li>Black disc, dashed ring: the treasure everyone is hunting</li>
+        <li>Faded: already found</li>
+      </ul>
+    </div>
+
+    <figure class="fig" aria-label="A three-player game playing itself">
+      <div class="fig-head"><p class="label">Fig. 1 · Live game, 3 players</p><div class="fig-tools"><p class="label" id="hud-turn">Turn 0 of 26</p><button class="play-toggle" id="hero-toggle" type="button">Pause</button></div></div>
+      <svg class="board" id="hero-board" role="img" aria-label="Seven by seven maze board with three pawns"></svg>
+      <figcaption>
+        <div class="hud">
+          <div class="card">
+            <p class="label">Hunting</p>
+            <svg id="hud-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
+            <strong id="hud-name">Crown</strong>
+          </div>
+          <div class="stats">
+            <div class="stat-row"><div><span>Found</span> <b id="hud-found">0 / 12</b></div><div><span>Turns left</span> <b id="hud-left">26</b></div></div>
+            <div class="track" id="hud-track" aria-hidden="true"></div>
+          </div>
+          <p class="caption" id="hud-caption">3 players, one shared target.</p>
+        </div>
+      </figcaption>
+    </figure>
+  </header>
+
+  <section class="section" id="setup">
+    <div class="section-head">
+      <p class="label">Before you start</p>
+      <h2>Setup</h2>
+    </div>
+    <div class="two">
+      <ol class="steps">
+        <li><div><h3>Build the maze</h3><p>Shuffle the loose tiles onto the board as usual. One tile is left over: that's the spare.</p></div></li>
+        <li><div><h3>Make one pile of 12</h3><p>Shuffle the treasure cards and deal 12 face down into a single pile. The rest go back in the box.</p></div></li>
+        <li><div><h3>Turn over the top card</h3><p>That treasure is what the whole table is hunting. Leave it face up where everyone can see it.</p></div></li>
+        <li><div><h3>Pawns on the corners</h3><p>One pawn per player on the start corners. The youngest player goes first.</p></div></li>
+        <li><div><h3>Lay out the collapse track</h3><p>26 spaces for 3 or 4 players, 28 for 2. A row of coins or tally marks on paper works. The marker starts at the beginning.</p></div></li>
+      </ol>
+      <div class="stack">
+        <div class="ends">
+          <div><p class="label">You win</p><h3>All 12 found</h3><p>The moment the 12th treasure is collected, everyone wins together.</p></div>
+          <div><p class="label">You lose</p><h3>The maze falls</h3><p>If the marker reaches the last space and treasures are still left, the labyrinth collapses.</p></div>
+        </div>
+        <p class="note">Only 12 of the 24 treasures are used, so the game fits in about 20 minutes. Each treasure takes about two turns: one to find it, and often one to set it up.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="turn">
+    <div class="section-head">
+      <p class="label">Taking turns around the table</p>
+      <h2>A turn</h2>
+    </div>
+    <div class="two">
+      <ol class="steps" id="turn-steps">
+        <li><div><span class="must">Must</span><h3>Push</h3><p>Slide the spare tile in at any arrow, turned any way you like. The tile pushed out the far side becomes the new spare. You can't push it straight back where the last player pushed it out.</p></div></li>
+        <li><div><span class="must">May</span><h3>Walk</h3><p>Move your pawn any distance along open paths, or stay put. Pawns don't block each other.</p></div></li>
+        <li><div><span class="must">If you can</span><h3>Collect</h3><p>End your move on the face-up treasure and it's found. Anyone can collect it. Set the card aside and turn over the next one.</p></div></li>
+        <li><div><span class="must">Always</span><h3>The maze shakes</h3><p>Move the collapse marker one space, whether or not anything was found.</p></div></li>
+      </ol>
+      <figure class="fig" aria-label="One turn, step by step">
+        <div class="fig-head"><p class="label">Fig. 2 · One turn</p><div class="fig-tools"><p class="label" id="turn-status">Push</p><button class="play-toggle" id="turn-toggle" type="button">Pause</button></div></div>
+        <svg class="board" id="turn-board" role="img" aria-label="Maze board showing a push, a walk and a collect"></svg>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="sacrifice">
+    <div class="section-head">
+      <p class="label">The heart of the co-op</p>
+      <h2>Can't reach it? Set up the next player</h2>
+    </div>
+    <div class="two">
+      <figure class="fig" aria-label="One player sets up the next">
+        <div class="fig-head"><p class="label">Fig. 3 · The sacrifice</p><div class="fig-tools"><p class="label" id="sac-step">1 of 4</p><button class="play-toggle" id="sac-toggle" type="button">Pause</button></div></div>
+        <svg class="board" id="sac-board" role="img" aria-label="Maze board where one player pushes so that the next player can collect"></svg>
+        <figcaption><p class="caption" id="sac-caption">● needs the treasure, but none of their pushes opens a path to it.</p></figcaption>
+      </figure>
+      <div class="stack">
+        <p class="lede">Your push stays on the board for the next player. If no push gets you to the treasure, use your turn to bring it to them.</p>
+        <ul class="findings">
+          <li><p>Look at the next player's pawn first. Which row or column could carry the treasure onto their path?</p></li>
+          <li><p>Pushing the treasure to the edge is good too. If it ends up on the spare tile, the next player can push it in right next to themselves.</p></li>
+          <li><p>Talk it through out loud. Everyone can see the target, so the whole table can help find the push.</p></li>
+          <li><p>Set the youngest player up with easy wins: a treasure already on their path, so they only need to see the board as it is.</p></li>
+        </ul>
+        <p class="note">In the simulations, a good table makes about 3 of these sacrifices per game. They're what makes the collapse beatable.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="good-to-know">
+    <div class="section-head">
+      <p class="label">Small rules</p>
+      <h2>Good to know</h2>
+    </div>
+    <ul class="rules">
+      <li><p class="label">Always push</p><p>Pushing is not optional, even if it breaks a good path.</p></li>
+      <li><p class="label">No undo</p><p>You can't push the spare back in where the previous player just pushed it out.</p></li>
+      <li><p class="label">Off the edge</p><p>A pawn pushed off the board comes back on the new tile at the other end of that row.</p></li>
+      <li><p class="label">Treasure on the spare</p><p>It can't be collected until someone pushes it back into the maze.</p></li>
+      <li><p class="label">Shared squares</p><p>Any number of pawns can stand on the same tile.</p></li>
+      <li><p class="label">One per turn</p><p>Only the face-up treasure counts, and only if you end your move on it.</p></li>
+    </ul>
+  </section>
+
+  <section class="section" id="difficulty">
+    <div class="section-head">
+      <p class="label">Tuning the collapse</p>
+      <h2>How hard should it be?</h2>
+      <p>Chance of finding every treasure before the collapse. The youngest plays their own turns; the other players help as described above.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Game</th><th class="num">Treasures</th><th class="num">Collapse after</th><th class="num">2 players</th><th class="num">3 players</th><th class="num">4 players</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Quick</td><td class="num">8</td><td class="num">20 turns</td><td class="num">76%</td><td class="num">85%</td><td class="num">90%</td></tr>
+          <tr class="pick"><td>Standard</td><td class="num">12</td><td class="num">26 turns</td><td class="num">59%</td><td class="num">73%</td><td class="num">79%</td></tr>
+          <tr class="pick"><td>Standard, 2 players</td><td class="num">12</td><td class="num">28 turns</td><td class="num">71%</td><td class="num">84%</td><td class="num">90%</td></tr>
+          <tr><td>Harder</td><td class="num">12</td><td class="num">24 turns</td><td class="num">47%</td><td class="num">60%</td><td class="num">65%</td></tr>
+          <tr><td>Gentle: plan every turn together</td><td class="num">12</td><td class="num">26 turns</td><td class="num">95%</td><td class="num">95%</td><td class="num">93%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">A turn is one player's turn, not a full round. At about 45 seconds a turn, 26 turns is 20 minutes. Time your first game: if turns run longer, play Quick.</p>
+  </section>
+
+  <section class="section" id="why">
+    <div class="section-head">
+      <p class="label">1000 simulated games per setup, 720 setups</p>
+      <h2>Why these rules</h2>
+      <p>Turns needed to find 12 treasures with 3 players. The bar is a typical game, the whisker runs out to a bad one (1 game in 10 takes longer).</p>
+    </div>
+    <div class="chart" id="chart" aria-label="Turns needed by rule variant"></div>
+    <ul class="findings">
+      <li><p><strong>One shared pile.</strong> With a pile each, the game lasts as long as the slowest pile, usually the youngest player's. Bad games run past 50 turns.</p></li>
+      <li><p><strong>Face down.</strong> With all cards face up there's almost always something reachable, so nobody needs to help anybody. One shared target keeps the table working together, and it's the easiest thing for a 6-year-old to keep in mind.</p></li>
+      <li><p><strong>Helping matters.</strong> The same table playing only for themselves needs a median of 29 turns instead of 24, and loses most games at a 26-turn collapse.</p></li>
+      <li><p><strong>Everyone gets moments.</strong> In a two-player game the youngest collects 58% of the treasures, because the other player keeps setting them up.</p></li>
+    </ul>
+  </section>
+
+  <footer class="title-block">
+    <div><p class="label">Title</p><strong>Before the Maze Falls</strong></div>
+    <div><p class="label">Players</p><span>2–4, age 6+</span></div>
+    <div><p class="label">Treasures</p><span>12, one pile, face down</span></div>
+    <div><p class="label">Collapse</p><span>26 turns (28 for 2)</span></div>
+  </footer>
+</div>
+
+<script>(()=>{var T=(e)=>{let t=e>>>0;return()=>{t=t+1831565813>>>0;let a=t;return a=Math.imul(a^a>>>15,a|1),a^=a+Math.imul(a^a>>>7,a|61),((a^a>>>14)>>>0)/4294967296}},Z=(e,t)=>Math.floor(e()*t),q=(e,t)=>{let a=[...e];for(let r=a.length-1;r>0;r--){let o=Z(t,r+1),f=a[r],u=a[o];if(f===void 0||u===void 0)continue;a[r]=u,a[o]=f}return a};var h=1,g=2,w=4,b=8,k=7,H=k*k,Ke=24,S=(e,t)=>e*k+t,B=(e)=>Math.floor(e/k),R=(e)=>e%k,pe=(e)=>B(e)%2===0&&R(e)%2===0,ne=[S(0,0),S(0,6),S(6,6),S(6,0)],J=(e)=>(e<<1|e>>3)&15;var yt=[{cell:S(0,0),open:g|w},{cell:S(0,6),open:w|b},{cell:S(6,6),open:h|b},{cell:S(6,0),open:h|g},{cell:S(0,2),open:g|w|b},{cell:S(0,4),open:g|w|b},{cell:S(2,6),open:h|w|b},{cell:S(4,6),open:h|w|b},{cell:S(6,2),open:h|g|b},{cell:S(6,4),open:h|g|b},{cell:S(2,0),open:h|g|w},{cell:S(4,0),open:h|g|w},{cell:S(2,2),open:g|w|b},{cell:S(2,4),open:h|w|b},{cell:S(4,4),open:h|g|b},{cell:S(4,2),open:h|g|w}],Lt=[...Array.from({length:12},()=>({open:h|w,treasure:-1})),...Array.from({length:16},(e,t)=>({open:h|g,treasure:t<6?12+t:-1})),...Array.from({length:6},(e,t)=>({open:h|g|b,treasure:18+t}))],Mt=(e,t)=>{let a=e;for(let r=0;r<t;r++)a=J(a);return a},Ze=(e)=>{let t=new Uint8Array(H),a=new Int8Array(H).fill(-1),r=0;for(let l of yt)if(t[l.cell]=l.open,!ne.includes(l.cell))a[l.cell]=r++;let o=q(Lt,e).map((l)=>({open:Mt(l.open,Z(e,4)),treasure:l.treasure})),f=0;for(let l=0;l<H;l++){if(pe(l))continue;let d=o[f++];if(d===void 0)throw Error("ran out of loose tiles");t[l]=d.open,a[l]=d.treasure}let u=o[f];if(u===void 0||f!==o.length-1)throw Error("expected exactly one spare tile");return{open:t,treasure:a,spareOpen:u.open,spareTreasure:u.treasure}},N=[1,3,5].flatMap((e)=>[{axis:"col",line:e,dir:1},{axis:"col",line:e,dir:-1},{axis:"row",line:e,dir:1},{axis:"row",line:e,dir:-1}]),me=(e)=>{let t=N[e];if(t===void 0)throw Error(`no shift ${e}`);return N.findIndex((a)=>a.axis===t.axis&&a.line===t.line&&a.dir===-t.dir)},_e=(e)=>Array.from({length:k},(t,a)=>e.axis==="col"?S(a,e.line):S(e.line,a)),kt=N.map((e)=>e.dir===1?_e(e):_e(e).reverse()),re=(e)=>{let t=kt[e];if(t===void 0)throw Error(`no shift ${e}`);return t},V=(e,t,a)=>{let r=re(a.shift),o=e.open.slice(),f=e.treasure.slice(),u=r[k-1]??0;for(let s=k-1;s>0;s--){let n=r[s]??0,m=r[s-1]??0;o[n]=e.open[m]??0,f[n]=e.treasure[m]??-1}let l=r[0]??0;o[l]=a.spareOpen,f[l]=e.spareTreasure;let d=t.map((s)=>{let n=r.indexOf(s);if(n===-1)return s;return n===k-1?l:r[n+1]??s});return{board:{open:o,treasure:f,spareOpen:e.open[u]??0,spareTreasure:e.treasure[u]??-1},pawns:d}},ie=(e)=>{let t=[],a=e;for(let r=0;r<4;r++){if(!t.includes(a))t.push(a);a=J(a)}return t},W=(e,t)=>{let a=t===null?-1:me(t),r=ie(e.spareOpen),o=[];for(let f=0;f<N.length;f++){if(f===a)continue;for(let u of r)o.push({shift:f,spareOpen:u})}return o},Pt=[{side:h,opposite:w,dr:-1,dc:0},{side:g,opposite:b,dr:0,dc:1},{side:w,opposite:h,dr:1,dc:0},{side:b,opposite:g,dr:0,dc:-1}],G=new Int8Array(H),Je=(e,t)=>{G.fill(-2);let a=[t];G[t]=-1;for(let r=0;r<a.length;r++){let o=a[r]??0,f=e.open[o]??0,u=B(o),l=R(o);for(let d of Pt){if((f&d.side)===0)continue;let s=u+d.dr,n=l+d.dc;if(s<0||s>=k||n<0||n>=k)continue;let m=S(s,n);if(G[m]!==-2||((e.open[m]??0)&d.opposite)===0)continue;G[m]=o,a.push(m)}}return a},Q=(e,t)=>Je(e,t),Qe=(e,t,a)=>{if(!Number.isInteger(a)||a<0||a>=H)return null;if(Je(e,t),G[a]===-2)return null;let r=[a];for(let o=G[a]??-1;o>=0;o=G[o]??-1)r.unshift(o);return r};var F=(e,t)=>{let a=Ze(t),r=q([...Array(Ke).keys()],t).slice(0,e.treasures),o=e.deck.pile==="shared"?0:Z(t,e.players),f=e.deck.pile==="shared"?[r]:Array.from({length:e.players},(u,l)=>r.filter((d,s)=>(s+o)%e.players===l));return{board:a,pawns:ne.slice(0,e.players),piles:f,deck:e.deck,lastShift:null,collected:0,total:r.length}},oe=(e,t)=>e.deck.pile==="shared"?0:t,y=(e,t)=>(e.piles[oe(e,t)]??[]).slice(0,e.deck.reveal),z=(e)=>e.collected===e.total,E=(e,t,a,r)=>{if(e.lastShift!==null&&a.shift===me(e.lastShift))throw Error("cannot undo the previous push");if(!ie(e.board.spareOpen).includes(a.spareOpen))throw Error("spare tile was reshaped, not rotated");let o=V(e.board,e.pawns,a),f=o.pawns[t];if(f===void 0)throw Error(`no player ${t}`);if(!Q(o.board,f).includes(r))throw Error("destination is not reachable");let u=o.pawns.map((m,c)=>c===t?r:m),l=o.board.treasure[r]??-1,d={...e,board:o.board,pawns:u,lastShift:a.shift};if(l<0||!y(e,t).includes(l))return{state:d,collected:null};let s=oe(e,t),n=e.piles.map((m,c)=>c===s?m.filter((p)=>p!==l):m);return{state:{...d,piles:n,collected:e.collected+1},collected:l}};var Ye=[{label:"One shared pile, face down",note:"these rules",typical:24,bad:30,sacrifices:3.1,ours:!0},{label:"One pile each, face down",typical:29,bad:52,sacrifices:1.7},{label:"Shared pile, all cards face up",typical:15,bad:18,sacrifices:0.5},{label:"Shared pile, face down, nobody helps",typical:29,bad:46,sacrifices:0}],O=(e,t)=>{let a=document.createElement("div");return a.className=e,t.appendChild(a),a},je=(e,t,a)=>{let r=(s)=>`${s/a.max*100}%`;e.replaceChildren();let o=O("chart-body",e);for(let s of t){let n=O(s.ours===!0?"bar-row ours":"bar-row",o),m=O("bar-label",n),c=document.createElement("div");if(c.textContent=s.label,s.note!==void 0){let K=document.createElement("strong");K.textContent=` (${s.note})`,c.appendChild(K)}let p=document.createElement("span");p.textContent=`typical ${s.typical} · bad ${s.bad} · ${s.sacrifices.toFixed(1)} sacrifices/game`,m.append(c,p);let x=O("bar-track",n);O("bar",x).style.width=r(s.typical);let M=O("whisker",x);M.style.left=r(s.typical),M.style.width=r(s.bad-s.typical)}let f=O("collapse-line",o);f.style.left=r(a.collapseAt);let u=document.createElement("span");u.textContent=`Collapse at ${a.collapseAt}`,f.appendChild(u);let l=O("axis",e);for(let s=0;s<=a.max;s+=10){let n=document.createElement("span");n.textContent=String(s),n.style.left=r(s),l.appendChild(n)}let d=document.createElement("p");d.className="label",d.textContent="Turns needed",e.appendChild(d)};var X={plans:!0,vision:1},At=0.9,at=0.01,Tt=13,vt=(e,t,a)=>{if(t<=0)return 0;if(a>=e)return 1;let r=1;for(let o=0;o<a;o++)r*=(e-t-o)/(e-o);return 1-Math.max(0,r)},ce=(e,t)=>Math.min(t,Math.max(1,Math.round(e.vision*t))),rt=(e,t,a)=>{let r=ce(e,t.length);return r>=t.length?t:q(t,a).slice(0,r)},Bt=(e,t)=>{let a=[];return e.treasure.forEach((r,o)=>{if(t.includes(r))a.push(o)}),a},xe=(e,t,a)=>{if(a.length===0)return 0;if(t.length===0)return Tt;return t.reduce((r,o)=>Math.min(r,Math.abs(B(o)-B(e))+Math.abs(R(o)-R(e))),Number.POSITIVE_INFINITY)},Rt=(e)=>new Set(e.pawns.flatMap((t,a)=>y(e,a))),Dt=(e,t,a,r,o,f)=>{let u=y(e,t).filter((c)=>o.has(c));if(u.length===0)return 0;let l=W(e.board,e.lastShift),d=rt(r,l,f),s=ce(a,l.length)>=l.length,n=0;for(let c of d){let p=V(e.board,e.pawns,c),x=p.pawns[t]??0;if(Q(p.board,x).some((M)=>u.includes(p.board.treasure[M]??-1))){if(s)return 1;n++}}let m=Math.round(n*l.length/d.length);return vt(l.length,Math.max(m,n>0?1:0),ce(a,l.length))},Ft=(e,t,a)=>{let r=oe(e,t);return e.piles.map((o,f)=>f===r?o.filter((u)=>u!==a):o)},Y=(e,t,a,r,o)=>{let f=a[t]??X,u=(t+1)%e.pawns.length,l=a[u]??X,d=f.plans&&u!==t,s=y(e,t),n=d?Rt(e):new Set;return r.map((m)=>{let c=V(e.board,e.pawns,m),p=Q(c.board,c.pawns[t]??0),x=(D,A)=>({...e,board:c.board,pawns:c.pawns.map((I,bt)=>bt===t?D:I),piles:A,lastShift:m.shift}),M=(D)=>d?Dt(D,u,l,f,n,o):0,K=p.filter((D)=>s.includes(c.board.treasure[D]??-1));if(K.length>0)return K.map((A)=>{let I=M(x(A,Ft(e,t,c.board.treasure[A]??-1)));return{option:m,dest:A,collects:!0,setup:I,distance:0}}).reduce((A,I)=>I.setup>A.setup?I:A);let ue=Bt(c.board,s),de=p.reduce((D,A)=>xe(A,ue,s)<xe(D,ue,s)?A:D);return{option:m,dest:de,collects:!1,setup:M(x(de,e.piles)),distance:xe(de,ue,s)}})},et=(e)=>(e.collects?1:0)+At*e.setup-at*e.distance,tt=(e)=>(e.collects?1:0)-at*e.distance,he=0.000000001,Se=(e,t)=>{if(e.collects)return!1;let a=Math.max(...t.map(tt)),r=Math.max(...t.filter((o)=>tt(o)>=a-he).map((o)=>o.setup));return e.setup>r+he},j=(e,t,a,r)=>{let o=a[t]??X,f=rt(o,W(e.board,e.lastShift),r),u=Y(e,t,a,f,r),l=Math.max(...u.map(et)),d=q(u.filter((s)=>et(s)>=l-he),r)[0]??u[0]??Et();return{...d,sacrifice:Se(d,u)}},Et=()=>{throw Error("no legal turn")};var ot=(e,t,a,r)=>Array.from({length:t},(o,f)=>{if(e==="solo")return{plans:!1,vision:r};if(e==="kid"&&f===0)return{plans:!1,vision:a};return{plans:!0,vision:r}});var ft=0.4;var st=0.2;var Sa=Array.from({length:36},(e,t)=>10+2*t);var Ce=[["path",{d:"M10.268 21a2 2 0 0 0 3.464 0"}],["path",{d:"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"}]];var ge=[["path",{d:"M16 7h.01"}],["path",{d:"M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20"}],["path",{d:"m20 7 2 .5-2 .5"}],["path",{d:"M10 18v3"}],["path",{d:"M14 17.75V21"}],["path",{d:"M7 18a6 6 0 0 0 3.84-10.61"}]];var we=[["path",{d:"M12 5v16"}],["path",{d:"M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"}]];var be=[["path",{d:"M12 20v-9"}],["path",{d:"M14 7a4 4 0 0 1 4 4v3a6 6 0 0 1-12 0v-3a4 4 0 0 1 4-4z"}],["path",{d:"M14.12 3.88 16 2"}],["path",{d:"M21 21a4 4 0 0 0-3.81-4"}],["path",{d:"M21 5a4 4 0 0 1-3.55 3.97"}],["path",{d:"M22 13h-4"}],["path",{d:"M3 21a4 4 0 0 1 3.81-4"}],["path",{d:"M3 5a4 4 0 0 0 3.55 3.97"}],["path",{d:"M6 13H2"}],["path",{d:"m8 2 1.88 1.88"}],["path",{d:"M9 7.13V6a3 3 0 1 1 6 0v1.13"}]];var ye=[["path",{d:"M20 6 9 17l-5-5"}]];var Le=[["path",{d:"M13.744 17.736a6 6 0 1 1-7.48-7.48"}],["path",{d:"M15 6h1v4"}],["path",{d:"m6.134 14.768.866-.5 2 3.464"}],["circle",{cx:"16",cy:"8",r:"6"}]];var Me=[["circle",{cx:"12",cy:"12",r:"10"}],["path",{d:"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"}]];var ke=[["path",{d:"M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"}],["path",{d:"M5 21h14"}]];var Pe=[["path",{d:"M14.086 18.412A2 2 0 0112.67 19H5v-7.672a2 2 0 01.586-1.414L11.75 3.75a6 6 0 118.49 8.49z"}],["path",{d:"M16 8 2 22"}],["path",{d:"M17.488 15H9"}]];var Ae=[["path",{d:"M10.5 3 8 9l4 13 4-13-2.5-6"}],["path",{d:"M17 3a2 2 0 0 1 1.6.8l3 4a2 2 0 0 1 .013 2.382l-7.99 10.986a2 2 0 0 1-3.247 0l-7.99-10.986A2 2 0 0 1 2.4 7.8l2.998-3.997A2 2 0 0 1 7 3z"}],["path",{d:"M2 9h20"}]];var Te=[["path",{d:"M15 10v1"}],["path",{d:"M7.528 20.472a1.6 1.6 0 012.277 0l1.057 1.056a1.6 1.6 0 002.276 0l1.057-1.056a1.6 1.6 0 012.277 0l1.114 1.114a1.4 1.4 0 002.414-1V10a8 8 0 00-16 0v10.586a1.4 1.4 0 002.414 1z"}],["path",{d:"M9 10v1"}]];var ve=[["path",{d:"M5 22h14"}],["path",{d:"M5 2h14"}],["path",{d:"M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"}],["path",{d:"M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"}]];var Be=[["path",{d:"m2 21 9.6-9.6"}],["path",{d:"m7.5 15.5 2.3 2.3a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L4 19"}],["circle",{cx:"15.5",cy:"7.5",r:"5.5"}]];var Re=[["path",{d:"M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"}],["path",{d:"M15 5.764v15"}],["path",{d:"M9 3.236v15"}]];var De=[["path",{d:"M13 22H4a2 2 0 0 1 0-4h12"}],["path",{d:"M13.236 18a3 3 0 0 0-2.2-5"}],["path",{d:"M16 9h.01"}],["path",{d:"M16.82 3.94a3 3 0 1 1 3.237 4.868l1.815 2.587a1.5 1.5 0 0 1-1.5 2.1l-2.872-.453a3 3 0 0 0-3.5 3"}],["path",{d:"M17 4.988a3 3 0 1 0-5.2 2.052A7 7 0 0 0 4 14.015 4 4 0 0 0 8 18"}]];var Fe=[["path",{d:"M19 17V5a2 2 0 0 0-2-2H4"}],["path",{d:"M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"}]];var Ee=[["path",{d:"M14 11a2 2 0 1 1-4 0 4 4 0 0 1 8 0 6 6 0 0 1-12 0 8 8 0 0 1 16 0 10 10 0 1 1-20 0 11.93 11.93 0 0 1 2.42-7.22 2 2 0 1 1 3.16 2.44"}]];var Oe=[["path",{d:"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"}]];var qe=[["path",{d:"m12.5 17-.5-1-.5 1h1z"}],["path",{d:"M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z"}],["circle",{cx:"15",cy:"12",r:"1"}],["circle",{cx:"9",cy:"12",r:"1"}]];var Ge=[["path",{d:"M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 0 0 4 0"}],["circle",{cx:"10",cy:"13",r:"8"}],["path",{d:"M2 21h12c4.4 0 8-3.6 8-8V7a2 2 0 1 0-4 0v6"}],["path",{d:"M18 3 19.1 5.2"}],["path",{d:"M22 3 20.9 5.2"}]];var He=[["path",{d:"m11 19-6-6"}],["path",{d:"m5 21-2-2"}],["path",{d:"m8 16-4 4"}],["path",{d:"M9.5 17.5 20.414 6.586A2 2 0 0021 5.172V3h-2.172a2 2 0 00-1.414.586L6.5 14.5"}]];var Ve=[["path",{d:"m10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44"}],["path",{d:"m13.56 11.747 4.332-.924"}],["path",{d:"m16 21-3.105-6.21"}],["path",{d:"M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z"}],["path",{d:"m6.158 8.633 1.114 4.456"}],["path",{d:"m8 21 3.105-6.21"}],["circle",{cx:"12",cy:"13",r:"2"}]];var Ue=[["path",{d:"M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2"}],["path",{d:"M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2"}],["path",{d:"M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3"}],["path",{d:"M4 22h16"}],["path",{d:"M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"}],["path",{d:"M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3"}]];var Ie=[["path",{d:"m12 10 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a8 8 0 1 0-16 0v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3l2-4h4Z"}],["path",{d:"M4.82 7.9 8 10"}],["path",{d:"M15.18 7.9 12 10"}],["path",{d:"M16.93 10H20a2 2 0 0 1 0 4H2"}]];var fe=[["path",{d:"m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"}],["path",{d:"m14 7 3 3"}],["path",{d:"M5 6v4"}],["path",{d:"M19 14v4"}],["path",{d:"M10 2v2"}],["path",{d:"M7 8H3"}],["path",{d:"M21 16h-4"}],["path",{d:"M11 3H9"}]];var lt="http://www.w3.org/2000/svg",C=(e,t,a)=>{let r=document.createElementNS("http://www.w3.org/2000/svg",e);for(let[o,f]of Object.entries(t))r.setAttribute(o,String(f));return a?.appendChild(r),r};var Ot=[{name:"Crown",icon:ke},{name:"Gem",icon:Ae},{name:"Key",icon:Be},{name:"Sword",icon:He},{name:"Shield",icon:Oe},{name:"Skull",icon:qe},{name:"Ghost",icon:Te},{name:"Beetle",icon:be},{name:"Bird",icon:ge},{name:"Rat",icon:De},{name:"Turtle",icon:Ie},{name:"Snail",icon:Ge},{name:"Book",icon:we},{name:"Map",icon:Re},{name:"Scroll",icon:Fe},{name:"Hourglass",icon:ve},{name:"Bell",icon:Ce},{name:"Trophy",icon:Ue},{name:"Feather",icon:Pe},{name:"Shell",icon:Ee},{name:"Compass",icon:Me},{name:"Coins",icon:Le},{name:"Wand",icon:fe},{name:"Telescope",icon:Ve}],P=(e)=>{let t=Ot[e];if(t===void 0)throw Error(`no treasure ${e}`);return t},se=(e,t,a,r,o)=>{let f=C("g",{class:"icon",transform:`translate(${r-a/2},${o-a/2}) scale(${a/24})`},e);for(let[u,l]of t){let d=document.createElementNS(lt,u);for(let[s,n]of Object.entries(l))if(n!==void 0)d.setAttribute(s,String(n));f.appendChild(d)}return f};var qt=(e)=>e<0.5?4*e*e*e:1-(-2*e+2)**3/2,ut={tween:(e,t)=>new Promise((a)=>{let r=performance.now(),o=(f)=>{let u=Math.min(1,(f-r)/e);if(t(qt(u)),u<1)requestAnimationFrame(o);else a()};requestAnimationFrame(o)}),sleep:(e)=>new Promise((t)=>setTimeout(t,e))},dt={tween:(e,t)=>(t(1),Promise.resolve()),sleep:()=>Promise.resolve()},_=(e,t,a)=>e+(t-e)*a,pt=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;var i=60,nt=i*0.36,Gt=[h|w,h|g,h|g|b],Ht=(e,t)=>{let a=e;for(let r=0;r<4;r++){if(a===t)return r;a=J(a)}throw Error("the spare can only be rotated, not reshaped")},Vt=(e)=>{for(let t of Gt){let a=t;for(let r=0;r<4;r++){if(a===e)return{base:t,turns:r};a=J(a)}}throw Error(`not a tile shape: ${e}`)},Ut=(e)=>{let t=i/2,a={[h]:`${t},0`,[g]:`${i},${t}`,[w]:`${t},${i}`,[b]:`0,${t}`},r=[h,g,w,b].filter((l)=>(e&l)!==0);if(r.length===2)return`M${a[r[0]??h]}L${t},${t}L${a[r[1]??w]}`;let[o,f]=(e&h)!==0&&(e&w)!==0?[h,w]:[g,b],u=r.find((l)=>l!==o&&l!==f)??h;return`M${a[o]}L${a[f]}M${t},${t}L${a[u]}`},It=(e,t)=>{switch(e){case 0:return`M${-t},0a${t},${t} 0 1,0 ${2*t},0a${t},${t} 0 1,0 ${-2*t},0Z`;case 1:return`M${-t*0.9},${-t*0.9}h${1.8*t}v${1.8*t}h${-1.8*t}Z`;case 2:return`M0,${-t*1.1}L${t*1.05},${t*0.85}L${-t*1.05},${t*0.85}Z`;default:return`M0,${-t*1.15}L${t},0L0,${t*1.15}L${-t},0Z`}},$t=[[-1,-1],[1,-1],[1,1],[-1,1]],Nt=[[6,6],[i-6,6],[6,i-6],[i-6,i-6]],Wt=0;class v{board;pawns;svg;motion;tiles=[];spare;pawnViews=[];treasures=new Map;arrows=[];tileLayer;hatch;constructor(e,t,a,r){this.svg=e,this.motion=r,this.board=t,this.pawns=[...a],this.hatch=`hatch-${++Wt}`,e.replaceChildren();let o=(k+2)*i;e.setAttribute("viewBox",`0 0 ${o} ${o}`);let f=C("pattern",{id:this.hatch,width:7,height:7,patternUnits:"userSpaceOnUse",patternTransform:"rotate(45)"},C("defs",{},e));C("line",{x1:0,y1:0,x2:0,y2:7,class:"hatch-line"},f);let u=C("g",{},e);N.forEach((d,s)=>this.arrows.push(this.drawArrow(u,s))),this.tileLayer=C("g",{},e),C("rect",{x:i,y:i,width:k*i,height:k*i,class:"frame"},e);let l=C("g",{},e);for(let d=0;d<H;d++){let s=this.drawTile(t.open[d]??0,t.treasure[d]??-1,pe(d));this.place(s,...this.cellXY(d)),this.tiles.push(s)}this.spare=this.drawTile(t.spareOpen,t.spareTreasure,!1),this.place(this.spare,...this.slotIn(2).at),this.pawns.forEach((d,s)=>{let n=C("path",{class:"pawn",d:It(s,i*0.1),"data-player":s},l);this.pawnViews.push({el:n,x:0,y:0}),this.setPawn(s,d)})}setTargets(e){for(let[t,a]of this.treasures)a.classList.toggle("target",e.includes(t))}placePawn(e,t){this.pawns[e]=t,this.setPawn(e,t)}async push(e){let t=re(e.shift),a=t.length-1,{at:r,d:o}=this.slotIn(e.shift),f=this.spare,u=[0,90,180,-90][Ht(this.board.spareOpen,e.spareOpen)]??0;this.tileLayer.appendChild(f.g),this.arrows.forEach((p,x)=>p.classList.toggle("active",x===e.shift));let l={x:f.x,y:f.y,angle:f.angle};await this.motion.tween(560,(p)=>{this.place(f,_(l.x,r[0],p),_(l.y,r[1],p)),this.turn(f,_(l.angle,l.angle+u,p))});let d=[...t.map((p)=>this.tileAt(p)),f].map((p)=>({view:p,x:p.x,y:p.y})),s=this.pawns.flatMap((p,x)=>{let M=this.pawnViews[x];return M!==void 0&&t.includes(p)?[{player:x,pawn:M,x:M.x,y:M.y,wraps:p===t[a]}]:[]});await this.motion.tween(620,(p)=>{for(let x of d)this.place(x.view,x.x+o[0]*p,x.y+o[1]*p);for(let x of s)this.movePawn(x.pawn,x.x+o[0]*p,x.y+o[1]*p)});let n=V(this.board,this.pawns,e),m=this.tileAt(t[a]??0);for(let p=a;p>0;p--)this.tiles[t[p]??0]=this.tileAt(t[p-1]??0);this.tiles[t[0]??0]=f,this.spare=m,this.board=n.board,this.pawns=n.pawns;let c=s.filter((p)=>p.wraps);await this.motion.tween(200,(p)=>c.forEach((x)=>x.pawn.el.setAttribute("opacity",String(1-p))));for(let p of s)this.setPawn(p.player,this.pawns[p.player]??0);await this.motion.tween(240,(p)=>c.forEach((x)=>x.pawn.el.setAttribute("opacity",String(p)))),this.arrows[e.shift]?.classList.remove("active")}async walk(e,t){let a=this.pawnViews[e],r=this.pawns[e];if(a===void 0||r===void 0)throw Error(`no player ${e}`);let o=Qe(this.board,r,t);if(o===null)throw Error(`player ${e} cannot reach cell ${t}`);for(let f of o.slice(1)){let u={x:a.x,y:a.y},[l,d]=this.pawnXY(f,e);await this.motion.tween(150,(s)=>this.movePawn(a,_(u.x,l,s),_(u.y,d,s)))}this.pawns[e]=t,this.setPawn(e,t)}async markFound(e){let t=this.treasures.get(e);if(t===void 0)return;let a=i/2;await this.motion.tween(480,(r)=>t.setAttribute("transform",`translate(${a},${a}) scale(${1+Math.sin(r*Math.PI)*0.6})`)),t.setAttribute("transform",`translate(${a},${a})`),t.classList.remove("target"),t.classList.add("found")}shake(){this.svg.classList.remove("shake"),this.svg.getBoundingClientRect(),this.svg.classList.add("shake")}tileAt(e){let t=this.tiles[e];if(t===void 0)throw Error(`no tile at ${e}`);return t}cellXY(e){return[(R(e)+1)*i,(B(e)+1)*i]}slotIn(e){let t=re(e),[a,r]=this.cellXY(t[0]??0),[o,f]=this.cellXY(t[1]??0),u=[o-a,f-r];return{at:[a-u[0],r-u[1]],d:u}}drawArrow(e,t){let{at:a,d:r}=this.slotIn(t),[o,f]=[r[0]/i,r[1]/i],[u,l]=[a[0]+i/2+o*(i/2-5),a[1]+i/2+f*(i/2-5)],[d,s]=[u-o*11,l-f*11],[n,m]=[-f*6,o*6],c=`${u},${l} ${d+n},${s+m} ${d-n},${s-m}`;return C("polygon",{class:"arrow",points:c},e)}drawTile(e,t,a){let{base:r,turns:o}=Vt(e),f=C("g",{"data-tile":a?"fixed":"loose","data-shape":r},this.tileLayer);C("rect",{x:0,y:0,width:i,height:i,class:"tile-paper"},f),C("rect",{x:0,y:0,width:i,height:i,fill:`url(#${this.hatch})`},f),C("rect",{x:0.5,y:0.5,width:i-1,height:i-1,class:"tile-edge"},f);let u=C("g",{"data-turn":""},f),l=Ut(r);if(C("path",{d:l,class:"wall","stroke-width":nt+2.6},u),C("path",{d:l,class:"floor","stroke-width":nt},u),a)for(let[s,n]of Nt)C("path",{class:"fix",d:`M${s-4},${n}h8M${s},${n-4}v8`},f);if(t>=0){let s=C("g",{class:"treasure","data-treasure":t,transform:`translate(${i/2},${i/2})`},f);C("circle",{class:"ring",r:i*0.36},s),C("circle",{class:"disc",r:i*0.25},s),se(s,P(t).icon,i*0.34,0,0),this.treasures.set(t,s)}let d={g:f,turn:u,x:0,y:0,angle:0};return this.turn(d,o*90),d}place(e,t,a){e.x=t,e.y=a,e.g.setAttribute("transform",`translate(${t},${a})`)}turn(e,t){e.angle=t,e.turn.setAttribute("transform",`rotate(${t} ${i/2} ${i/2})`)}pawnXY(e,t){let[a,r]=this.cellXY(e),[o,f]=$t[t]??[0,0];return[a+i/2+o*i*0.11,r+i/2+f*i*0.11]}movePawn(e,t,a){e.x=t,e.y=a,e.el.setAttribute("transform",`translate(${t},${a})`)}setPawn(e,t){let a=this.pawnViews[e];if(a===void 0)return;this.movePawn(a,...this.pawnXY(t,e)),a.el.setAttribute("data-cell",String(t))}}var zt=["● The youngest","■ Player 2","▲ Player 3","◆ Player 4"],ee=(e)=>zt[e]??`Player ${e+1}`,Xt=(e,t,a,r,o)=>{if(e.collects)return`${ee(t)} can reach the ${r}.`;if(e.sacrifice)return`${ee(t)} can't reach the ${r}, so pushes it toward ${ee(a)}.`;if(o!==null&&e.distance<o)return`${ee(t)} can't reach the ${r} yet, so moves closer.`;return`${ee(t)} can't reach the ${r} this turn.`},_t=(e,t,a)=>{let r=e.treasure.indexOf(a);return r<0?null:Math.abs(B(r)-B(t))+Math.abs(R(r)-R(t))},mt=async(e,t)=>{let{hud:a,motion:r}=e,o=T(t.seed),f=F({players:t.players,treasures:t.treasures,deck:{pile:"shared",reveal:1}},o),u=ot("kid",t.players,st,ft),l=new v(e.svg,f.board,f.pawns,r),d=y(f,0)[0]??0;l.setTargets([d]),a.show({target:d,found:0,turn:0}),a.say(`${t.players} players, one shared target: the ${P(d).name}.`),await r.sleep(1600);let s=0;while(!z(f)&&s<t.collapseAfter){await e.waitVisible();let m=s%t.players,c=_t(f.board,f.pawns[m]??0,d),p=j(f,m,u,o);a.say(Xt(p,m,(m+1)%t.players,P(d).name,c)),await l.push(p.option),await l.walk(m,p.dest);let x=E(f,m,p.option,p.dest);if(f=x.state,x.collected!==null)await l.markFound(x.collected),a.say(`Found the ${P(x.collected).name}. ${f.collected} of ${f.total}.`);let M=y(f,0)[0];if(M!==void 0)d=M;l.setTargets(y(f,0)),s++,a.show({target:M??null,found:f.collected,turn:s}),l.shake(),await r.sleep(900)}let n=z(f);return a.say(n?`All ${f.total} treasures found with ${t.collapseAfter-s} turns to spare. Everyone wins.`:`The maze collapsed with ${f.total-f.collected} treasures left.`),{found:f.collected,turns:s,won:n}};var Kt=[{plans:!1,vision:1}],Zt=26,Jt=10,$e=(e)=>F({players:1,treasures:6,deck:{pile:"shared",reveal:1}},e),Qt=async(e,t,a,r)=>{let{view:o,motion:f,mark:u}=e,l=j(t,0,Kt,a);u(0,"1 · Push"),await o.push(l.option),await f.sleep(350),u(1,"2 · Walk"),await o.walk(0,l.dest),await f.sleep(300);let d=E(t,0,l.option,l.dest);if(d.collected!==null)u(2,`3 · Collect the ${P(d.collected).name}`),await o.markFound(d.collected);else u(2,"3 · Nothing to collect this turn");return o.setTargets(y(d.state,0)),await f.sleep(700),u(3,`4 · Marker moves: ${Zt-r} left`),o.shake(),await f.sleep(1100),d.state},it=async(e,t,a)=>{for(let r=3;;r++){let o=T(r),f=$e(o),u=new v(e,f.board,f.pawns,t.motion);u.setTargets(y(f,0));for(let l=1;l<=Jt&&!z(f);l++)await a(),f=await Qt({...t,view:u},f,o,l)}};var Ne=[X,X],Yt=0.3,le=(e)=>F({players:2,treasures:12,deck:{pile:"shared",reveal:1}},T(e)),xt=(e,t)=>{for(let a=e;a<t;a++){let r=T(a),o=le(a),f=W(o.board,o.lastShift),u=Y(o,0,Ne,f,r);if(u.some((m)=>m.collects))continue;let l=u.filter((m)=>m.setup>=1&&Se(m,u)),d=l[0];if(d===void 0||l.length>u.length*Yt)continue;if(Y(o,1,Ne,f,r).some((m)=>m.collects))continue;let s=E(o,0,d.option,d.dest).state,n=Y(s,1,Ne,W(s.board,s.lastShift),r).find((m)=>m.collects);if(n!==void 0)return{seed:a,setup:d,finish:n}}return null},ct=async(e,t)=>{let{motion:a,say:r}=e,o=le(t.seed),f=new v(e.svg,o.board,o.pawns,a),u=y(o,0),l=P(u[0]??0).name;f.setTargets(u),r(1,`● needs the ${l}, but none of their pushes opens a path to it.`),await e.waitVisible(),await a.sleep(2800),r(2,`So ● pushes for ■ instead, bringing the ${l} within one push of ■.`),await f.push(t.setup.option),await f.walk(0,t.setup.dest),o=E(o,0,t.setup.option,t.setup.dest).state,await a.sleep(1800),await e.waitVisible(),r(3,"■'s turn. One push opens the path."),await f.push(t.finish.option),await a.sleep(500),await f.walk(1,t.finish.dest);let d=E(o,1,t.finish.option,t.finish.dest);if(d.collected!==null)await f.markFound(d.collected);r(4,`■ collects the ${l}. One treasure for the team.`),await a.sleep(3400)};var jt=3;class We{els;setup;spaces;constructor(e,t){this.els=e,this.setup=t,this.spaces=Array.from({length:t.collapseAfter},(a,r)=>{let o=document.createElement("i");if(r>=t.collapseAfter-jt)o.className="edge";return o}),e.track.replaceChildren(...this.spaces),e.icon.setAttribute("viewBox","0 0 24 24")}show({target:e,found:t,turn:a}){let{els:r,setup:o}=this,f=e===null?{name:"All found",icon:ye}:P(e);r.icon.replaceChildren(),se(r.icon,f.icon,24,12,12),r.name.textContent=f.name,r.found.textContent=`${t} / ${o.treasures}`,r.left.textContent=String(o.collapseAfter-a),r.turn.textContent=`Turn ${a} of ${o.collapseAfter}`,this.spaces.forEach((u,l)=>u.classList.toggle("on",l<a))}say(e){this.els.caption.textContent=e}}var ht=(e)=>{let t=(d)=>{let s=e.getElementById(d);if(!(s instanceof HTMLElement))throw Error(`missing #${d}`);return s},a=(d)=>{let s=e.getElementById(d);if(!(s instanceof SVGSVGElement))throw Error(`#${d} is not an <svg>`);return s},r=(d)=>{let s=e.getElementById(d);if(!(s instanceof HTMLButtonElement))throw Error(`#${d} is not a <button>`);return s},o={svg:a("hero-board"),toggle:r("hero-toggle"),hud:{icon:a("hud-icon"),name:t("hud-name"),found:t("hud-found"),left:t("hud-left"),turn:t("hud-turn"),track:t("hud-track"),caption:t("hud-caption")}},f={svg:a("turn-board"),toggle:r("turn-toggle"),status:t("turn-status")},u={svg:a("sac-board"),toggle:r("sac-toggle"),step:t("sac-step"),caption:t("sac-caption")},l=[...e.querySelectorAll("#turn-steps > li")];if(l.length!==4)throw Error(`expected 4 turn steps, found ${l.length}`);return{chart:t("chart"),hero:o,turn:f,sacrifice:u,steps:l,toggles:[o.toggle,f.toggle,u.toggle]}};var St=()=>{let e=!1,t=!0,a=[],r=()=>{if(!e||!t)return;let o=a;a=[];for(let f of o)f()};return{wait:()=>e&&t?Promise.resolve():new Promise((o)=>{a.push(o)}),setVisible:(o)=>{e=o,r()},setPlaying:(o)=>{t=o,r()},get playing(){return t}}},Ct=(e,t)=>{new IntersectionObserver((a)=>t.setVisible(a.some((r)=>r.isIntersecting))).observe(e)},gt=(e,t)=>{let a=()=>{e.textContent=t.playing?"Pause":"Play",e.dataset.paused=String(!t.playing)};e.addEventListener("click",()=>{t.setPlaying(!t.playing),a()}),a()};var te={players:3,treasures:12,collapseAfter:26},ea=4500,L=ht(document),ae=pt(),U=ae?dt:ut;je(L.chart,Ye,{max:60,collapseAt:te.collapseAfter});var Xe=(e,t)=>{let a=St();return Ct(e,a),gt(t,a),a};if(ae)for(let e of L.toggles)e.hidden=!0;var wt=new We(L.hero.hud,te);if(ae){let e=F({players:te.players,treasures:te.treasures,deck:{pile:"shared",reveal:1}},T(11));new v(L.hero.svg,e.board,e.pawns,U).setTargets(y(e,0)),wt.show({target:y(e,0)[0]??null,found:0,turn:0})}else{let e=Xe(L.hero.svg,L.hero.toggle);(async()=>{for(let t=11;;t++)await mt({svg:L.hero.svg,hud:wt,motion:U,waitVisible:e.wait},{...te,seed:t}),await U.sleep(ea)})()}var ta=(e,t)=>{L.steps.forEach((a,r)=>a.classList.toggle("active",r===e)),L.turn.status.textContent=t};if(ae){let e=$e(T(3));new v(L.turn.svg,e.board,e.pawns,U).setTargets(y(e,0))}else{let e=Xe(L.turn.svg,L.turn.toggle);it(L.turn.svg,{motion:U,mark:ta},e.wait)}var ze=xt(1,4000);if(ze!==null){let e=(t,a)=>{L.sacrifice.step.textContent=`${t} of 4`,L.sacrifice.caption.textContent=a};if(ae){let t=le(ze.seed);new v(L.sacrifice.svg,t.board,t.pawns,U).setTargets(y(t,0))}else{let t=Xe(L.sacrifice.svg,L.sacrifice.toggle);(async()=>{for(;;)await ct({svg:L.sacrifice.svg,motion:U,waitVisible:t.wait,say:e},ze)})()}}})();
+</script>

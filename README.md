@@ -182,12 +182,19 @@ bun run site
 bun run site:serve
 ```
 
-`bun run site` builds the house-rules page, "Before the Maze Falls", into `site/dist/before-the-maze-falls.html`: one
-self-contained file that also gets published as an Artifact. `bun run site:serve` serves it at http://localhost:4173.
+`bun run site` builds the house-rules page, "Before the Maze Falls", as one self-contained file, written twice:
+`docs/index.html` is the full page, and `site/dist/before-the-maze-falls.html` is the same page without its doctype,
+for publishing as an Artifact (the Artifact host adds the document skeleton). `bun run site:serve` serves the full page
+at http://localhost:4173.
+
+The page is live at https://vasc.github.io/labyrinth-coop/. GitHub Pages serves `docs/` from `main` as it is, with no
+build on GitHub, so after changing the page run `bun run site` and commit `docs/`. `bun test` fails while the
+committed page is out of date with its source.
 
 ## The rules page (`site/`)
 
-- `site/template.html` holds the page's markup and CSS; `site/build.ts` bundles `site/src/main.ts` into it.
+- `site/template.html` holds the page's markup and CSS; `site/bundle.ts` bundles `site/src/main.ts` into it, and
+  `site/build.ts` runs that into `site/dist/`.
 - The animated boards run on the simulator's own code: `src/board.ts` for the maze, `src/game.ts` for turns and
   collecting, and `src/policy.ts` for how players choose. Fig. 1 plays the realistic table from the findings above
   (the youngest unaided, the adults planning), so what it shows is what the numbers measure.
